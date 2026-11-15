@@ -6,8 +6,8 @@ import type { World } from '../world/world.ts';
 
 /**
  * Where everyone stands in a fight. Positions are worked out from the shape of
- * the screen: on a wide screen and on a phone the two sides face each other left
- * and right; on a tall tablet they face each other up and down.
+ * the screen: the two sides face each other left and right, and on an upright
+ * screen up and down where the ground leaves the columns no room.
  */
 
 /**
@@ -109,14 +109,14 @@ export function formationBounds(spots: Array<[number, number]>, shapes: FighterS
   };
 }
 
-/** How far, in world units, a phone fight's two columns may run past their room before rows are tried instead, where the fight may shrink to fit. */
+/** How far, in world units, an upright fight's two columns may run past their room before rows are tried instead, where the fight may shrink to fit. */
 const COLUMN_SLACK = 13;
 
 /**
  * Where everyone stands in a fight. On a wide screen the two sides face each other left and
- * right, the enemies keeping the side they are on. On an upright phone (`room`) they do too,
- * as two columns, unless the ground leaves no room for that. On a tall tablet, and where a
- * phone's ground forces rows, they face each other up and down: the enemies above the party,
+ * right, the enemies keeping the side they are on. On an upright screen, phone or tablet
+ * (`room`), they do too, as two columns, unless the ground leaves no room for that. Where the
+ * ground forces rows, and upright with no room given, they face each other up and down: the enemies above the party,
  * since the command menu and the status box fill the bottom of the panel and enemies below
  * the party would be under them; only when that would crowd someone against a wall, or put
  * them where the fight cannot reach on foot, do they stand below. A staged encounter can lock
@@ -126,8 +126,8 @@ export function battleLayout(world: World, party: Actor[], enemies: Actor[], wid
   const leader = party[0]!;
   const ex = enemies.reduce((s, e) => s + e.x, 0) / enemies.length;
   if (room && !wide) {
-    // At a fixed phone zoom, shorten the gap and flatten the party's triangle before reducing
-    // readability. Every candidate still uses the same walkable-ground and separation rules.
+    // In the room, shorten the gap and flatten the party's triangle before reducing readability.
+    // Every candidate still uses the same walkable-ground and separation rules.
     const actors = [...party, ...enemies];
     const shapes = room.shapes ?? actors.map(a => ({ halfW: a.size * 1.5, above: a.size * 2.7, below: 8 * world.ground }));
     const toward: Dir = ex >= leader.x ? 'right' : 'left';
@@ -173,10 +173,10 @@ export function battleLayout(world: World, party: Actor[], enemies: Actor[], wid
     };
     if (uprightFacing) return fit([uprightFacing]).lay;
     // Two columns, as on a wide screen (the owner, 2026-11-06: they read better on an upright phone than two rows, which
-    // on a tall phone stood most of a screen apart). Rows only where the ground leaves the columns no room: they would
-    // run off the room, or the two sides would touch more than in rows. Where both run off it, whichever runs off less.
-    // On a phone short enough for its fights to shrink, columns may run further off it than rows before giving way:
-    // the fight then shrinks to fit, to about 85% of full size on the smallest phones.
+    // on a tall phone stood most of a screen apart; 2026-11-15, the same on an upright tablet). Rows only where the ground
+    // leaves the columns no room: they would run off the room, or the two sides would touch more than in rows. Where both
+    // run off it, whichever runs off less. Where the fight may shrink (a tablet, or a phone short enough), columns may run
+    // further off it than rows before giving way: the fight then shrinks to fit, to about 85% on the smallest phones.
     const slack = room.shrinks ? COLUMN_SLACK : 8;
     const side = fit(['left', 'right'], slack);
     if (side.overflow <= slack && side.contact === 0) return side.lay;

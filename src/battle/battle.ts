@@ -271,7 +271,7 @@ export class Battle {
   clock = 0;
   /** Whether the fight is laid out side to side, and the point the camera frames. */
   private laidWide = false;
-  private laidPhone = false;
+  private laidInRoom = false;
   private laidFor = '';
   /** Starting positions keep repeated phone relayouts from drifting the fight across the map. */
   private formationOrigin: Actor[] = [];
@@ -904,18 +904,23 @@ export class Battle {
         enemies: starting.enemies.map((p, i) => place(this.party.length + i, p, ground)) };
     }
     const phone = thumbReach(this.game.layout);
+    const wide = wideBattle(this.game.layout.panel);
     w.setFightScale(1);
     const band = this.ui.fightBand();
-    const room = phone ? { w: (band.right - band.left) / w.zoom - 4, h: (band.bottom - band.top) / w.zoom - 2, shapes: this.fighterShapes(), shrinks: shortPhoneFight(this.game.layout) } : undefined;
+    // Every upright fight is fitted to its room, a tablet's as a phone's, so the two sides stand side by side wherever the
+    // ground leaves room for it (the owner, 2026-11-15, on an iPad held upright: side by side "looks better in almost all
+    // situations"). A tablet's fight may shrink to fit, as a short phone's may.
+    const room = wide ? undefined : { w: (band.right - band.left) / w.zoom - 4, h: (band.bottom - band.top) / w.zoom - 2, shapes: this.fighterShapes(),
+      shrinks: !phone || shortPhoneFight(this.game.layout) };
     const actors = this.formationOrigin;
-    this.laidPhone = phone;
+    this.laidInRoom = !!room;
     this.laidFor = this.formationKey();
     const party = actors.slice(0, this.party.length);
     const enemies = actors.slice(this.party.length);
-    if (this.column) return columnLayout(w, party, enemies, room);
+    if (this.column) return columnLayout(w, party, enemies, phone ? room : undefined);
     // The tank blocks the north end of its square. Swapping sides would send the
     // party walking through it during the approach, particularly on phones.
-    const lay = battleLayout(w, party, this.helpers.size ? enemies.slice(0, 1) : enemies, wideBattle(this.game.layout.panel), room, this.encounter === 'tank' ? 'up' : undefined);
+    const lay = battleLayout(w, party, this.helpers.size ? enemies.slice(0, 1) : enemies, wide, room, this.encounter === 'tank' ? 'up' : undefined);
     if (this.helpers.size) {
       // Those who came stand close round the one who called, two in front of it and one behind, where the corridor holds them.
       const [cx, cy] = lay.enemies[0]!;
@@ -990,7 +995,7 @@ export class Battle {
     }
     const wide = wideBattle(this.game.layout.panel);
     let changed = false;
-    if ((wide !== this.laidWide || ((this.laidPhone || thumbReach(this.game.layout)) && this.laidFor !== this.formationKey())) && this.phase === 'active') {
+    if ((wide !== this.laidWide || ((this.laidInRoom || !wide) && this.laidFor !== this.formationKey())) && this.phase === 'active') {
       this.applyFormation();
       this.laidWide = wide;
       this.layouts++;

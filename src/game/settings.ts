@@ -8,7 +8,12 @@ export interface Settings {
   effects: number;
   reduceMotion: boolean;
   halftone: boolean;
-  /** Draw at no more than 2x on a denser phone screen (src/render/density.ts); off unless chosen. */
+  /**
+   * Draw at no more than 2x on a denser phone screen (src/render/density.ts). On by default on a touch screen (the owner,
+   * 2026-11-15: "Graphics fidelity looks good either way ... we should default to it on phones"), the screens where More
+   * Settings offers it once they are denser than 2x; off elsewhere, where it would only cap a zoomed-in desktop browser
+   * that has no row to turn it off.
+   */
   batterySaver: boolean;
   /** How big interface text is: Small, Normal or Large (TEXT_SIZES). Scales every menu, balloon, and page. */
   textSize: number;
@@ -55,7 +60,7 @@ export function loadSettings(): Settings {
     effects: 1,
     reduceMotion: typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
     halftone: true,
-    batterySaver: false,
+    batterySaver: touchScreen(),
     textSize: typeof window === 'object' ? defaultTextSize(window.innerWidth, window.innerHeight) : TEXT_SIZES[1],
     textSizes: 2,
     keys: null,

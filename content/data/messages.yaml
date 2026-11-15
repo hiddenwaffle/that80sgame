@@ -1,0 +1,349 @@
+# All system text. {curly} words are filled in by the game.
+
+battle:
+  nuke_countdown: TACTICAL STRIKE
+  nuke_locked: TARGET LOCKED
+  # The panel slammed across the fight as the strike begins (provisional).
+  nuke_banner: INCOMING!
+  finale_overpowered: OVERPOWERED
+  nuke_warning: Tactical strike incoming!
+  nuke_impact: The tactical nuke annihilated the party!
+  attack_hit: "{actor} did {amount} damage to {target}"
+  special_hit: "{actor} used {special} for {amount} damage to {target}"
+  attack_miss: "{actor} missed!"
+  enemy_hit: "{actor} hit {target} for {amount}"
+  enemy_miss: "{actor} missed {target}!"
+  defeat: "{actor} defeated {target}. Gained {xp} XP"
+  defeat_no_xp: "{actor} defeated {target}."
+  defeat_many: "{actor} defeated {count} enemies. Gained {xp} XP"
+  miss_word: MISS
+  everyone: everyone
+  won: Won the Battle!
+  xp_each: "{xp} XP each"
+  level_up: "{name} gained a level!"
+  # Under a level-up: what the level added. {accuracy} and {speed} can be added too.
+  level_gains: "Level {level}: Health +{hp}, Energy +{mp}, Strength +{strength}"
+  dots: "+{dots} Dots"
+  not_enough_mp: Not enough Energy
+  # Ronnienomics!'s smoke bomb landing, in comic letters over the cloud.
+  smoke_poof: "POOF!"
+  # Ronnienomics! failing: the slanted panel across the fight, its line under it (the amount grows with each failure in
+  # a game, specials.yaml escape.debt), and the fight's message line.
+  escape_banner: "FAILED"
+  escape_debt: "Debt: {amount}"
+  escape_failed: "Ronnienomics failed!"
+  select_target: "Select a target:"
+  select_member: "Use on whom?"
+  # While a move on a whole side waits for one more confirm, so it can still be taken back.
+  confirm_area: "Confirm {move} on"
+  all_enemies: every enemy
+  whole_party: the whole party
+  down: DOWN
+  knocked_out: "{name} is down!"
+  # The status rows: a member ready to act, and the mark after low HP (so it does not rely on red alone).
+  ready: READY
+  # Inside each card's bars, the label at the left and the numbers at the right.
+  hp_label: Health
+  hp_short_label: HP
+  hp_line: "{hp}/{max}"
+  mp_label: Energy
+  mp_line: "{mp}"
+  # The numbers that rise from someone healed.
+  heal_hp: "+{amount}"
+  heal_mp: "+{amount} Energy"
+  # Revival's panel across the fight: the big word, then who is back (shown in capitals).
+  revival_banner: "1UP!"
+  revival_back: "{name} is back!"
+
+menu:
+  attack: Attack
+  special: Special
+  item: Item
+  back: Back
+  special_title: Special Action
+  item_title: Which Item?
+  mp: "Energy: {mp}/{max}"
+  none: Nothing to use
+  mp_cost: "{mp} Energy"
+  count: "x{count}"
+  # The command menu's title when more than one member is ready: left and right switch between them.
+  switch_title: "‹ {name} ›"
+
+item_unavailable:
+  no_stock: No stock
+  battle_only: Battle only
+  needs_living: Needs living target
+  full_hp: Health full
+  full_mp: Energy full
+  full_vitals: Health and Energy full
+  no_targets: No targets
+
+party:
+  stats: "Stats"
+  title: Stats/Item
+  # The page's heading on desktop and tablets (the owner, 2026-10-28); the menu button keeps the title above.
+  heading: Stats
+  dots: "Dots: {dots}"
+  level: Level
+  next: Next XP
+  hp: Health
+  mp: Energy
+  speed: Speed
+  strength: Strength
+  accuracy: Accuracy
+  # Choosing who gets an item: the list's title, each member's row, and the caption's lines.
+  use_on: "{item} on whom? {count} left"
+  # What an item would do, shown while choosing who gets it; {from} is DOWN for someone down. The arrow is drawn in ink.
+  preview_hp: "{from} → {to} Health"
+  preview_mp: "{from} → {to} Energy"
+  effect_hp: "Restores {hp} Health."
+  effect_mp: "Restores {mp} Energy."
+  effect_revive: Brings back a member who is down.
+  items: Items
+  settings: Settings
+  save_code: Save code
+  quit: Quit to title
+  close: Close
+  log: Recent lines
+
+shop:
+  greeting: Buy Something?
+  dots: "Dots - {dots}"
+  # How many of the item under the cursor the party has, beside the Dots. (Each row shows only its price.)
+  have: "You have {count} {item}"
+  poor: Not enough dots. The beauty of capitalism.
+  bought: "Bought a {item}."
+  leave: Leave
+
+title:
+  new_game: New Game
+  continue: Continue
+  continue_unreadable: Continue (progress unavailable)
+  # Beside Continue: how long the save has been played, and where it is.
+  continue_detail: "{time} · {place}"
+  # Before a new game replaces a save.
+  confirm_new: "Start over? Your progress in {place}, {time} played, will be replaced."
+  confirm_yes: Start over
+  # "Back", as every other page says it (the owner, 2026-10-23).
+  confirm_no: Back
+  settings: Settings
+  achievements: Achievements
+  enter_code: Enter a save code
+  headline: Three Heroes. One Credit.
+  credit: Original by KD and MX (2003) · Remastered (2026)
+  # The owner's disclaimer (2026-10-18, reworded 2026-11-13), "a south park-like disclaimer": so nobody thinks any of this should make sense.
+  disclaimer: All characters and events in this game, even those based on real people, are entirely fictional. It contains silly ideas, like 1980s fiscal policy, and should not be played by... anyone.
+
+# The save code pages: copying a save out as text, and pasting one back in.
+savecode:
+  out_title: Save code
+  out_help: Save the code below to resume your game from this spot.
+  size: "{count} characters"
+  copy: Copy
+  copied: Save code copied.
+  copy_failed: Could not copy here. Tap and hold the code to copy it instead.
+  in_title: Enter a save code
+  in_help: Paste a saved code into the box.
+  load: Load
+  back: Back
+  box_empty: Paste a code here
+  valid: "Found: {place}, level {level}, {time} played."
+  empty: Paste a save code.
+  not_a_code: Save code invalid.
+  damaged: Save code too short. Are some characters missing?
+  unreadable: Save code too short. Are some characters missing?
+  incomplete: That code is not a complete save.
+  unknown_map: This save is on a map this version of the game does not have.
+  unknown_member: This save has a party member this game does not know.
+
+# The pause page during a fight, and quitting to the title page.
+pause:
+  button: Pause
+  resume: Resume
+  settings: Settings
+  log: Recent lines
+  quit: Quit to title
+
+# The page to reread recent lines and fight results.
+log:
+  title: Recent lines
+  empty: Nothing has been said yet.
+
+quit:
+  # From the party menu and from a fight's Pause alike (the owner, 2026-11-13).
+  confirm: Quit to title?
+  # When the save before quitting fails.
+  unsaved: The browser could not store your progress. Quit anyway?
+  yes_anyway: Quit anyway
+  yes: Quit
+  no: Stay
+
+# A question put in a story ([ask] in the script), on the yes/no card.
+story:
+  yes: "Yes"
+  no: "No"
+
+# The ninjas' lesson on the martial arts street ([kuji_kiri] in content/script/05_field.txt): the nine seals in Japanese,
+# one a cut (rin, pyō, tō, sha, kai, jin, retsu, zai, zen; no English on screen, the owner, 2026-11-07), and the panel at
+# the end, its line the move's name.
+ninja:
+  seal_marks: "臨 兵 闘 者 皆 陣 烈 在 前"
+  # A special taught, not an item given (the owner, 2026-11-07).
+  learned: "NEW SPECIAL:"
+
+# Names of keys on the Controls page, by keyboard code. Letters and digits name
+# themselves; a key not listed here shows its code.
+keys:
+  ArrowUp: Up arrow
+  ArrowDown: Down arrow
+  ArrowLeft: Left arrow
+  ArrowRight: Right arrow
+  Escape: Esc
+  Enter: Enter
+  NumpadEnter: Enter (pad)
+  Space: Space
+  Backspace: Backspace
+  Tab: Tab
+  ShiftLeft: Left Shift
+  ShiftRight: Right Shift
+  ControlLeft: Left Ctrl
+  ControlRight: Right Ctrl
+  AltLeft: Left Alt
+  AltRight: Right Alt
+  Semicolon: ";"
+  Quote: "'"
+  Comma: ","
+  Period: "."
+  Slash: "/"
+  BracketLeft: "["
+  BracketRight: "]"
+  Minus: "-"
+  Equal: "="
+
+# Short names for keys on the small key caps beside buttons. A key not listed here uses its name above.
+keycaps:
+  ArrowUp: Up
+  ArrowDown: Down
+  ArrowLeft: "‹"
+  ArrowRight: "›"
+  Escape: Esc
+  Backspace: Bksp
+  ShiftLeft: Shift
+  ShiftRight: Shift
+  ControlLeft: Ctrl
+  ControlRight: Ctrl
+  AltLeft: Alt
+  AltRight: Alt
+
+# The Controls page, reached from Settings.
+controls:
+  none: none
+  title: Controls
+  up: Up
+  down: Down
+  left: Left
+  right: Right
+  confirm: Confirm
+  cancel: Cancel or back
+  menu: Menu or pause
+  reset: Reset to defaults
+  back: Back
+  # When a gamepad player chooses a row: pads keep their usual buttons.
+
+settings:
+  title: Settings
+  more: More settings
+  # Tiny in the foot of the Settings page: the commit this copy of the game was built from, and when (in UTC).
+  build: "Build: {sha} · {time}"
+  build_changed: "Build: {sha} with uncommitted changes · {time}"
+  log: Recent lines
+  text_speed: Text speed
+  text_size: Text size
+  controls: Controls
+  # The text sizes are Small, Normal and Large (Normal is shared with the text speeds).
+  small: Small
+  large: Large
+  music: Music
+  effects: Effects
+  motion: Reduce motion
+  halftone: Print filter
+  # Phones denser than 2x only (src/render/density.ts).
+  battery: Battery saver
+  on: "On"
+  off: "Off"
+  slow: Slow
+  normal: Normal
+  fast: Fast
+  instant: Instant
+  # Asked before Reduce motion goes on from Settings, in terms of the effects it turns off (the owner, 2026-11-13); the safe
+  # answer comes first.
+  motion_confirm: Turn off fun animation effects?
+  motion_yes: Turn off
+  motion_no: Keep on
+  # Asked before the Print filter goes off from Settings; the answer that keeps it on comes first.
+  halftone_confirm: Turn off the Print filter? Disables the fine dots screen overlay effect processing.
+  halftone_yes: Turn off
+  halftone_no: Keep on
+  # Asked before Battery saver goes on (the owner, 2026-11-14, in these words); the answer that keeps it off comes first.
+  battery_confirm: This conserves battery life but reduces graphics quality.
+  battery_yes: Turn on
+  battery_no: Keep off
+
+system:
+  save_failed: The browser could not store your progress. It may be out of room, or in private browsing.
+  autosave_failed: The browser could not store your progress. It may be out of room, or in private browsing.
+  # The page a game step that failed leaves up (src/ui/stopped.ts). Placeholders for the prose pass.
+  stopped_title: Something went wrong
+  stopped_text: The game stopped. Your progress up to the last autosave is kept; reload to carry on from there.
+  stopped_reload: Reload
+  rested: The party rests. Health and Energy restored.
+  # Under a power pellet's own notice: how many of the map's power pellets are found (the owner, 2026-10-22).
+  power_pellets: "Power Pellets Found: {found} of {total}"
+  annihilated_headline: Party Annihilated
+  # The game-over page's story opens with it, in words (the owner, 2026-11-13).
+  annihilated_lead: 'Your party could not stop "communism", but you are still going to a better place.'
+  # Provisional copy for the students' rescue after an unprepared Warsaw defeat.
+  rescued_headline: Students Rescue Stranded Trio
+  rescued_retry: Submit to... Universal Healthcare?
+  retry: Try again
+  load: Load Last Save
+  to_title: Back to title
+  game_over: GAME OVER
+  continued: Continued on the next page
+  fin: FIN
+  # The button under FIN at the end of the credits: back to the title.
+  play_again: Play again
+  paused: Paused
+  # Over the game while a phone is held sideways, under Paused.
+  rotate_to_unpause: Rotate to unpause
+  # In the bottom left of the screen while Reduce motion is on, so a still screen is not taken for a hang.
+  reduced_motion: Reduced motion is on!
+
+# The achievements' page, its details and its notification. The names were Claude's first try (2026-10-31); the owner renamed
+# the 100% one and the level 1 tank one, and wrote their lines, on 2026-11-11, and renamed the finished one on 2026-11-13.
+achievements:
+  title: Achievements
+  # The row that opens the 100% details, with how far it has got.
+  details: "Progress: {percent}% [Details]"
+  earned: Earned
+  not_yet: Not yet
+  unlocked: Achievement unlocked
+  finished_name: History Class Dismissed
+  finished_line: Beat the game.
+  hundred_name: To the Max
+  hundred_line: Complete 100% of the game.
+  tank_at_one_name: Early-Stage Capitalist
+  # A line of its own for each thing it asks, with a hanging indent under its bullet.
+  tank_at_one_line: "• Obtain Ronnie's secret special, and\n• Beat the tank at level 1"
+  secret_name: Secret Achievement
+  pellets: Power pellets collected
+  ghosts: Unique ghosts defeated
+  patrols: Patrols defeated
+  tank: Tank defeated
+  warsaw: Warsaw Pac defeated
+  unknown: "??"
+  # The hidden one (the owner, 2026-11-11): the last line of the 100% details, in words from the start, and its notification,
+  # which says "Hidden achievement" over its name.
+  unnuked: Avoid getting nuked (single run)
+  hidden_unlocked: Hidden achievement
+  unnuked_name: Avoid Getting Nuked (Single Run)

@@ -1,0 +1,42 @@
+# Things lying on maps. A pickup object's `kind` property names one of these.
+# Bonuses apply to the whole party, once. A maximum bonus does not refill anything.
+
+hp:
+  stat: max_hp
+  amount: 5
+  message: "Max Health +5 for All!"
+accuracy:
+  stat: accuracy
+  amount: 2
+  message: "Accuracy +2 for All!"
+mp:
+  stat: max_mp
+  amount: 5
+  message: "Max Energy +5 for All!"
+strength:
+  stat: strength
+  amount: 5
+  message: "Strength +5 for All!"
+alley_gift:
+  stat: max_hp
+  amount: 3
+  bonuses:
+    - stat: strength
+      amount: 1
+  message: "Max Health +3 and Strength +1 for All!"
+speed:
+  stat: speed
+  amount: 10
+  message: "Speed +10 for All!"
+  sound: fanfare
+  # The intended shortcut through the boss's armor. Extra leveling is an alternate solution.
+  # It stands out where it lies, is celebrated, and also makes the party walk faster.
+  celebrate: true
+  walk: 1.2
+
+# The small pellets lining the arcade corridors. Each is worth one Dot, and they come back
+# when the maze resets.
+pellet:
+  stat: dots
+  amount: 1
+  sound: waka

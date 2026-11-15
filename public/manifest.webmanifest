@@ -1,0 +1,15 @@
+{
+  "name": "That '80s Game",
+  "short_name": "'80s Game",
+  "description": "A short comedy role-playing game in which three arcade heroes leave their maze for the political world of the 1980s.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#e9e2cf",
+  "theme_color": "#e9e2cf",
+  "icons": [
+    { "src": "icons/icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon_maskable_512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

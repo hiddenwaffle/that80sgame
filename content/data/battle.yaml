@@ -1,0 +1,21 @@
+# Turn-queue prototype. Logical recovery uses the old Speed rates and action costs.
+# Only the active player decision counts real seconds. It waits while the Item or Special list is open, and while a
+# target is picked for one (dbf2a99); the command menu and an Attack's target pick count.
+# Default allowance; encounters.yaml can override it for each fight.
+decision_seconds: 7
+bar: 100
+fill_per_speed: 5
+speed_offset: 3
+
+# Logical recovery cost of each action. Special moves set their own cost.
+costs:
+  attack: 100
+  item: 40
+
+# A plain attack does Strength times a random factor in this range.
+damage_variance: [0.8, 1.2]
+
+# Seconds the battle cry stays up after it has finished typing (the owner, 2026-10-24: one second, so cries stay about
+# 1.1 to 1.5 seconds at Normal text speed, the longer ones longer); and the tank's backup soldiers take to run in.
+cry_time: 1
+backup_run_time: 1.6

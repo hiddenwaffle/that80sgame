@@ -1,0 +1,230 @@
+# Enemy types. Map enemies refer to these by id (the `kind` property in Tiled).
+# name: shown in the target list and the log's fight lines; two or more of one name in a fight are lettered (Ghost A, Ghost B, ...).
+# timer: the turn prototype uses the mean of this range as logical recovery.
+# Forecasting never consumes random numbers.
+
+ghost_green:
+  name: Ghost
+  look: ghost_green
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_red:
+  name: Ghost
+  look: ghost_red
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_orange:
+  name: Ghost
+  look: ghost_orange
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+# The first ghost in the maze, for players new to fights. Frightened, as Pac-Man's
+# ghosts turn: slow to act, and it hits for about 2, so a new player can read the fight without being
+# hurt. It stands to one side of the way in and can be walked past. Enough HP for about six of the party's
+# plain attacks at level 1 (the owner, 2026-10-03; simulated, misses counted: a median of 6, rarely 4 or
+# fewer; 120 before, about 2.6).
+ghost_blue:
+  name: Ghost
+  look: ghost_blue
+  hp: 330
+  attack: 2
+  xp: 15
+  dots: 10
+  timer: [6, 7]
+
+# Every maze ghost its own colour (the owner, 2026-10-29), each with green, red and orange's numbers.
+ghost_pink:
+  name: Ghost
+  look: ghost_pink
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_cyan:
+  name: Ghost
+  look: ghost_cyan
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_yellow:
+  name: Ghost
+  look: ghost_yellow
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_lime:
+  name: Ghost
+  look: ghost_lime
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_purple:
+  name: Ghost
+  look: ghost_purple
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_white:
+  name: Ghost
+  look: ghost_white
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_brown:
+  name: Ghost
+  look: ghost_brown
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_magenta:
+  name: Ghost
+  look: ghost_magenta
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_teal:
+  name: Ghost
+  look: ghost_teal
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+ghost_grey:
+  name: Ghost
+  look: ghost_grey
+  hp: 200
+  attack: 25
+  xp: 35
+  dots: 20
+  timer: [2, 4]
+
+# Stands in the corridor to the bridge. Worth no XP: what it calls in pays instead, so skipping the 3-ghost groups keeps a
+# party at level 1, and clearing them first means fewer come. At level 1 with all three helpers, a player using specials wins
+# more often than at the tank, one without them almost never (the owner, 2026-11-01; tests/giant_ghost.test.ts plays it through).
+ghost_giant:
+  name: Giant Ghost
+  look: ghost_giant
+  hp: 1000
+  attack: 25
+  xp: 0
+  dots: 40
+  timer: [3, 3]
+  blast:
+    name: Boo!
+    damage: 60
+    before: gorbie
+
+ghost_cream:
+  name: Ghost
+  look: ghost_cream
+  hp: 240
+  attack: 15
+  xp: 50
+  dots: 30
+  timer: [4.5, 5.5]
+
+guard_cap:
+  name: "The People's Guard"
+  look: guard_cap
+  hp: 380
+  attack: 45
+  xp: 55
+  dots: 30
+  timer: [2.8, 3.1]
+
+guard_hat:
+  name: "Comrade"
+  look: guard_hat
+  hp: 420
+  attack: 45
+  xp: 55
+  dots: 30
+  timer: [2.8, 3.1]
+
+soldier:
+  name: "The People's Guard"
+  look: soldier
+  hp: 400
+  attack: 50
+  xp: 55
+  dots: 30
+  timer: [3.5, 3.8]
+
+# The two half-Health tank reinforcements use the selected boss-fight tuning;
+# street patrols above keep the numbers used to capture the study's route entries.
+tank_soldier:
+  name: "The People's Infantry"
+  look: soldier
+  hp: 280
+  attack: 30
+  xp: 55
+  dots: 30
+  timer: [3.5, 3.8]
+
+tank:
+  name: Tank
+  look: tank
+  hp: 1300
+  attack: 52
+  xp: 500
+  dots: 250
+  timer: [2, 3]
+
+# Finale gimmick, with no turn queue or individual decision deadlines.
+# Qualification is fixed at entry. Grind stats guarantee five offensive hits;
+# otherwise the pellet permits nine hits before its longer fuse. Unprepared hits do no real damage.
+# HP represents the show, not a defense/damage calculation. Animations keep charging the fuse.
+boss:
+  name: Warsaw Pac
+  look: boss
+  hp: 600
+  finale:
+    # Archived full-maze loops are L7 after 20 minutes; shorter loops reach it later.
+    grind_strength: { olli: 139, ronnie: 159, gorbie: 119 }
+    grind_hits: 5
+    pellet_hits: 9
+    # 15 real seconds: a choice about every 1.25 s. 20 was tried and was too slow (the owner, 2026-11-06).
+    pellet_countdown: 15
+  attack: 9999
+  # Finale celebration: 500 XP each keeps the familiar reward/level-up presentation.
+  xp: 1500
+  dots: 0
+  timer: [999, 999]
+  countdown: 8

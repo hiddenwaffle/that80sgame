@@ -1,0 +1,124 @@
+# Berlin: the pun, the boss, and the end of the quest.
+
+== berlin_arrive ==
+[gather]
+Gorbie: Our most formidable adversary is somewhere here.
+Ronnie: Who would that be?
+Gorbie: None other than the root of "communism"...
+> (braces for really bad pun)
+Gorbie [shout, large]: THE WARSAW PAC!
+[shake_head ronnie olli]
+> (audience groans)
+> (game designer apologizes profusely)
+Ronnie: Umm... yeah... don't ever say that to me again either.
+[line_up]
+
+# The first meeting, or a return after the party was wiped out (the owner, 2026-10-14: "When the trio comes back to
+# Berlin after the party is wiped out, they should say different things at the fight than they did the first time").
+# warsaw_lost is set when Retry brings the party back from a lost boss fight.
+== boss_approach ==
+[gather]
+# Anyone half hidden behind the Wall steps up clear of it while his first shout types out, and all look toward the shout (the
+# owner, 30 Oct).
+[step_clear boss_backdrop right]
+[run boss_approach_first !warsaw_lost]
+[run boss_approach_unprepared warsaw_lost,!taken:field:speed_pellet]
+[run boss_approach_again warsaw_lost,taken:field:speed_pellet]
+[battle boss]
+
+# The boss's German lines were partly hidden behind sprites in the recording. The hidden
+# letters here are best guesses that fit the counted gaps: verboten, hier, toot, Berliner.
+== boss_approach_first ==
+Boss [offscreen_right]: Achtung! Das ist verboten!
+Gorbie: Oh no! That's either a college student who barely remembers his German classes, or it's the Warsaw Pac!
+Boss [offscreen_right]: Kommen sie hier!
+Ronnie: My fellow party members, I'll be signing legislation which outlaws the Warsaw Pac forever. The fighting begins in 2 seconds.
+
+# "What?! You're not dead?!" and "Once more!" (the owner's lines, 2026-11-13).
+== boss_approach_again ==
+Boss [offscreen_right]: Was?! Sie sind nicht tot?!
+Gorbie: A nuclear war cannot be won!
+Boss [offscreen_right]: Noch einmal!
+Ronnie: I've amended the legislation to beat this guy down faster.
+
+# A return without the pellet: the party stays silent. The speed hint alone is not enough.
+== boss_approach_unprepared ==
+Boss [offscreen_right]: Was?! Sie sind nicht tot?!
+Boss [offscreen_right]: Noch einmal!
+
+== cry_boss ==
+# Shouted as he steps out from behind the guard tower and charges, with the balloon riding on him.
+Boss: Sie sind tot!
+
+== boss_defeated ==
+# The beaten Warsaw Pac is still on its feet for its last words, then disappears in an explosion.
+Boss: Ach nein! Ich bin ein Berliner!{br}Neunundneunzig Luftballons!
+[music ending]
+[explode boss]
+# The hidden achievement's notification, as the smoke clears, in a run the Warsaw Pac never nuked (the owner, 2026-11-11).
+[achieve unnuked]
+# Drab Berlin warms and sun rays break in once the Warsaw Pac has gone (the owner, 2026-10-19).
+[sunlight]
+[camera party]
+[gather]
+Ronnie: We've dissolved the Warsaw Pac.
+Ronnie: "Communism" is no more.
+Ronnie: Mr. Gorbie, let's tear down this wall!
+# Idea from 2026-09-28: Reagan's "Mr. Gorbachev, tear down this wall!" could go around here.
+Gorbie: I have an idea. You "help" the Western world,
+Gorbie: I'll "help" the Eastern world.
+Ronnie: Yes... together we will be unstoppable...
+[run closing]
+
+# Berlin's townspeople (the owner, 2026-10-11: "Give the few Berlin residents useful, locally relevant conversations";
+# 2026-10-14: after a wipe-out they "should remark on how quickly the nuclear blast was cleaned up"). The owner's lines
+# (2026-11-13); the tour guide has nothing to say after the blast (requires on the map).
+== berlin_guide ==
+Berlin Tour Guide: Welcome to West Berlin!
+
+== berlin_souvenir ==
+[run berlin_souvenir_first !warsaw_lost]
+[run berlin_souvenir_after warsaw_lost]
+
+== berlin_souvenir_first ==
+Berlin Souvenir Hunter: I smuggle pebbles from the Wall to American tourists.
+
+== berlin_souvenir_after ==
+Berlin Souvenir Hunter: They swept up the mushroom cloud debris.
+Berlin Souvenir Hunter: That's all you need to do, right?
+
+# After the blast he speaks of it only to someone who heard about his aunt before; anyone else hears about her first (the
+# owner, 2026-11-13). The line after the blast is looked for first, since the first meeting sets berlin_nephew_met.
+== berlin_nephew ==
+[run berlin_nephew_after warsaw_lost,berlin_nephew_met]
+[run berlin_nephew_first !warsaw_lost]
+[run berlin_nephew_first warsaw_lost,!berlin_nephew_met]
+
+== berlin_nephew_first ==
+[flag berlin_nephew_met]
+Berlin Nephew: At the Wall I wave to my aunt.
+Berlin Nephew: She waves back the news.
+
+== berlin_nephew_after ==
+Berlin Nephew: Auntie waved that they swept up that nuclear blast.
+
+== berlin_citizen ==
+[run berlin_citizen_first !warsaw_lost]
+[run berlin_citizen_after warsaw_lost]
+
+== berlin_citizen_first ==
+Berlin Ordinary Citizen: War is peace.
+Berlin Ordinary Citizen: Freedom is slavery.
+Berlin Ordinary Citizen: Ignorance is strength.
+
+== berlin_citizen_after ==
+Berlin Ordinary Citizen: A nuke? Nonsense.
+Berlin Ordinary Citizen: Reject the evidence of your eyes and ears.
+
+# The shopper, student, pensioner and commuter say nothing (the owner, 2026-11-13), and the three workers at the Wall
+# nothing either: the Strike Leader is the only worker who speaks (the owner, 14 Nov).
+
+# The striking crew on the bridge, after the blast (the owner, 13 Nov; the words are the owner's).
+== berlin_strike ==
+Berlin Strike Leader: They denied us nuclear hazard pay,
+Berlin Strike Leader: so we're on strike.

@@ -1,0 +1,23 @@
+# The newspaper's name, every page's dateline, and the chapter front pages. Placeholder text: expect to rewrite all of it.
+
+title: That '80s Game
+# The left and right of the line under every newspaper page's masthead. {issue} is the page's issue: a chapter's number, so each
+# chapter is a new issue of the paper, or an ending's own (ending_pages.yaml).
+dateline: ["Vol. I, No. {issue}", "One Credit"]
+
+# Chapter front pages appear on first map entry, unless on: script defers them to a scene.
+chapters:
+  - id: arcade
+    map: town
+    headline: Trio Sets Off With a Goal
+  - id: field
+    map: border
+    headline: Trio Steps Off the Grid
+  - id: curtain
+    map: field
+    headline: Heroes Reach Yonder Fields
+  # Only once the tank is beaten (the owner, 2026-11-10): a trip into Berlin before it gets no paper; the first one after does.
+  - id: berlin
+    map: berlin
+    requires: tank_defeated
+    headline: Beijing Protest Crushes Tank

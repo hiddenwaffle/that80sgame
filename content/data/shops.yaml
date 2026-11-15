@@ -1,0 +1,5 @@
+# Named shop prices override only the listed items; the others keep items.yaml's prices.
+# Any merchant can use this list by running a scene with [shop beijing].
+beijing:
+  prices:
+    ether: 10

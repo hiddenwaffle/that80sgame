@@ -1,0 +1,77 @@
+# The maze: the ghosts' battle cries, in the order the party meets them, and the flowers.
+# "Enemies" points the balloon at the ghosts in the fight.
+
+== cry_maze_1 ==
+Enemies: ThunderPACS HOOooOOooOOoo!
+
+== cry_maze_2 ==
+# The Karate Kid (1984): "Strike first. Strike hard. No mercy."
+Enemies: Pac first! Pac hard! No mercy!
+
+== cry_maze_3 ==
+# Bart Simpson: "Don't have a cow, man."
+Enemies: Don't have a pac, man
+
+== cry_maze_4 ==
+# Predator (1987): "If it bleeds, we can kill it."
+Enemies: If it waka-wakas, we can kill it!
+
+== cry_maze_5 ==
+# Scarface (1983): "Say hello to my little friend!"
+Enemies: Say hello to my little pac!
+
+== cry_maze_6 ==
+# Mad Max Beyond Thunderdome (1985): "Two men enter, one man leaves."
+Enemies: Two pacs enter, one pac leaves!
+
+== cry_maze_7 ==
+Enemies: Cowabunga!
+
+# Placeholder for the prose pass: Ghostbusters (1984).
+== cry_giant ==
+Enemies: I ain't afraid of no pac!
+
+# Poltergeist (1982): "They're here."
+== cry_giant_help ==
+[wait 1.4]
+Giant Ghost [haunted]: {speed 40}They're {speed 3}here
+
+# Ferris Bueller's Day Off (1986), the roll call: every group cleared, nobody answers.
+== cry_giant_nobody ==
+[wait 0.6]
+[blink maze_giant_1]
+[wait 0.8]
+Giant Ghost: Bueller?...
+[wait 0.6]
+[blink maze_giant_1]
+[wait 0.8]
+Giant Ghost: ... Bueller?...
+
+== giant_retry_specials ==
+Gorbie: We should chomp on cherries after the jumpscares.
+
+== giant_retry_groups ==
+Ronnie: We could try thinning their numbers first.
+
+# After the giant ghost, the way to the bridge open: they have never seen one (the owner, 2026-11-01). Olli and Ronnie walk on
+# toward the bridge while Gorbie, seeing the flower, goes up to it a moment later at his usual pace (the owner, 14 Nov: "Why does
+# Gorbie walk so slow all of a sudden?"); as he asks, they stop and turn back to look at him; then all look on
+# again and fall in behind Olli before the player has him (the owner, 14 Nov). The camera keeps all three in view, as on the
+# smallest phone it followed Olli and lost Gorbie. Sideways: a look up at it read as one at the sky.
+== maze_flower ==
+[camera everyone]
+[walk_on olli to onward_olli]
+[walk_on ronnie to onward_ronnie]
+[face gorbie flower_1 sideways]
+[wait 0.7]
+[walk gorbie to flower_left]
+[face gorbie flower_1 sideways]
+[face olli gorbie sideways]
+[face ronnie gorbie sideways]
+Gorbie: What's this thing?
+[face gorbie right]
+[face olli right]
+[face ronnie right]
+[wait 0.3]
+[line_up wait]
+

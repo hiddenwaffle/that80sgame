@@ -1,0 +1,161 @@
+# Fights. The enemies in each fight are the map objects whose `encounter` property names it,
+# so who fights and where they stand is set in Tiled. Here: the battle cry scene, what
+# happens after a win, and whether the enemies come back when the maze resets.
+
+# The weak first ghost, beside the way in. No battle cry yet (one is for the owner to write), and once
+# beaten it stays gone.
+maze_first:
+  decision_seconds: 17
+
+maze_1:
+  decision_seconds: 14
+  cry: cry_maze_1
+  respawn: true
+maze_2:
+  decision_seconds: 14
+  cry: cry_maze_2
+  respawn: true
+maze_3:
+  decision_seconds: 14
+  cry: cry_maze_3
+  respawn: true
+maze_4:
+  decision_seconds: 14
+  cry: cry_maze_4
+  respawn: true
+maze_5:
+  decision_seconds: 14
+  cry: cry_maze_5
+  respawn: true
+maze_6:
+  decision_seconds: 14
+  cry: cry_maze_6
+  respawn: true
+maze_7:
+  decision_seconds: 14
+  cry: cry_maze_7
+  respawn: true
+
+# In the corridor, where group 7 stood. Beaten once, it stays gone. Its call: card ghost_big_with_runners (the owner, 2026-11-01).
+maze_giant:
+  decision_seconds: 14
+  cry: cry_giant
+  calls_for_help:
+    at: 0.5
+    groups: [maze_1, maze_5, maze_6]
+    words: Calls for help!
+    cry: cry_giant_help
+    nobody: cry_giant_nobody
+  retry_no_specials: giant_retry_specials
+  retry_helpers: giant_retry_groups
+  after: maze_flower
+
+bridge_guards:
+  music: kumite
+  decision_seconds: 11.5
+  cry: cry_halt
+  flag: bridge_open
+  after: curtain_arrive
+
+# Beijing's street fights have their own fight music, an 80s action-film loop (the owner, 2026-10-12). The patrols' four
+# sayings take turns down this list, so each street hears three different ones (the owner, 2026-10-20).
+field_1:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+field_2:
+  decision_seconds: 9
+  cry: cry_field_3
+  music: kumite
+field_3:
+  decision_seconds: 9
+  cry: cry_field_4
+  music: kumite
+field_1b:
+  decision_seconds: 9
+  cry: cry_field_5
+  music: kumite
+field_2b:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+field_3b:
+  decision_seconds: 9
+  cry: cry_field_3
+  music: kumite
+field_1c:
+  decision_seconds: 9
+  cry: cry_field_4
+  music: kumite
+field_2c:
+  decision_seconds: 9
+  cry: cry_field_5
+  music: kumite
+field_3c:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+
+# The second pair in each alley shares its first pair's cry, music and decision time.
+field_1_lower:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+field_2_lower:
+  decision_seconds: 9
+  cry: cry_field_3
+  music: kumite
+field_3_lower:
+  decision_seconds: 9
+  cry: cry_field_4
+  music: kumite
+field_1b_lower:
+  decision_seconds: 9
+  cry: cry_field_5
+  music: kumite
+field_2b_lower:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+field_3b_lower:
+  decision_seconds: 9
+  cry: cry_field_3
+  music: kumite
+field_1c_lower:
+  decision_seconds: 9
+  cry: cry_field_4
+  music: kumite
+field_2c_lower:
+  decision_seconds: 9
+  cry: cry_field_5
+  music: kumite
+field_3c_lower:
+  decision_seconds: 9
+  cry: cry_field_1
+  music: kumite
+
+# The tank fights to the boss music, kept after the owner tried it, on the street fights' band (the owner, 2026-10-18).
+# It blows up where the fight left the camera, with no pan to it (the owner, 2026-10-23: "let's have the camera not
+# pan to focus on the tank when it explodes at the end of the battle").
+# The tank keeps battle.yaml's 7 s a decision (the owner, 2026-11-06, after the novice study: "Just leave 7s").
+tank:
+  cry: cry_tank
+  reinforcement_cry: cry_tank_backups
+  music: boss
+  flag: tank_defeated
+  after: tank_after
+  keep_framing: true
+
+# The Warsaw Pac's fight stays sideways on phones too, the party in a column facing him (the owner, 2026-10-05:
+# his rifle points sideways, and the column leaves room for the ricochets on the ground).
+# Berlin's music keeps playing through the Warsaw Pac's fight, to try how it feels (the owner, 2026-10-18).
+boss:
+  music: berlin
+  column: true
+  cry: cry_boss
+  scripted: true
+  boss: true
+  # Losing here sends an unprepared party back for the speed pellet, and the trio talks of it on the way back in.
+  no_escape: true
+  after: boss_defeated
+  flag: boss_defeated

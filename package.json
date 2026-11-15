@@ -1,0 +1,36 @@
+{
+  "name": "that80sgame",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A short comedy role-playing game by hiddenwaffle: three arcade heroes leave their maze for the political world of the 1980s.",
+  "scripts": {
+    "dev": "THAT80SGAME_WEBP_WATCH=1 NODE_COMPILE_CACHE=$PWD/tmp/node_compile_cache vite",
+    "build": "npm run typecheck && npm run check && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "node tools/check_content.ts",
+    "release": "node tools/publish/release.ts",
+    "release:public": "node tools/publish/release.ts --push",
+    "test": "node tools/run_unit_tests.ts",
+    "shots": "node tools/screenshots.ts",
+    "tileset": "node tools/make_tileset.ts"
+  },
+  "dependencies": {
+    "@fontsource/bangers": "5.3.0",
+    "@fontsource/comic-neue": "5.3.0",
+    "@fontsource/old-standard-tt": "5.3.0",
+    "@fontsource/oswald": "5.3.0",
+    "@fontsource/unifrakturmaguntia": "5.3.0",
+    "pixi.js": "8.20.1",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "playwright": "1.63.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}

@@ -1,0 +1,51 @@
+# The three heroes.
+# Leader first: the player steers the first member in `order`.
+order: [olli, ronnie, gorbie]
+
+members:
+  olli:
+    name: Olli
+    look: olli
+    hp: 150
+    mp: 10
+    speed: 3
+    strength: 69
+    accuracy: 80
+  ronnie:
+    name: Ronnie
+    look: ronnie
+    hp: 140
+    mp: 10
+    speed: 2
+    strength: 89
+    accuracy: 85
+  gorbie:
+    name: Gorbie
+    look: gorbie
+    hp: 180
+    mp: 35
+    speed: 1
+    strength: 49
+    accuracy: 90
+
+# What each level adds to the maximums. Current HP and MP are topped up by the same amount.
+level_up:
+  hp: 10
+  mp: 5
+  strength: 10
+  accuracy: 1
+  speed: 0
+
+# XP needed for each level after the first.
+# Past the end of the list, each level needs 1.5 times the last.
+xp_to_next: [100, 150, 225, 340, 500]
+
+start:
+  dots: 50
+  items:
+    tonic: 10
+    ether: 2
+    revival: 1
+  map: house
+  spawn: start
+  scene: opening

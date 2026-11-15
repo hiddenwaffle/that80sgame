@@ -1,0 +1,13 @@
+# The Iron Curtain: where the arcade maze breaks off into the real world.
+
+# After the guards are beaten. The newspaper follows at the transition to Beijing.
+== curtain_arrive ==
+[flag bridge_seen]
+[gather]
+Ronnie: The Iron Curtain is a bridge between our abstract world and a natural world?
+Gorbie: Perhaps the source of "communism" lies across temples of trees and cathedrals of forests?
+Ronnie: Uhh, sure. Just don't ever say "temples of trees" or "cathedrals of forests" to me ever again.
+[line_up]
+
+== cry_halt ==
+Soldiers: Halt!

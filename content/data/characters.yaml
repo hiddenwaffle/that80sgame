@@ -1,0 +1,170 @@
+# Everyone who speaks in the script. The name before the colon in a script line must be listed here.
+#
+# actor: who the balloon points at. A party member id (olli, ronnie, gorbie), the name of a
+#        map object from Tiled, "encounter" for the enemies in the current fight, or "none".
+# voice: pitch of the typing sound, in hertz.
+# style: balloon (speech), shout (jagged balloon), boss (dark red lettering), caption (box).
+# label: the name shown on the balloon, if different from the script name.
+
+Olli:
+  actor: olli
+  voice: 520
+Ronnie:
+  actor: ronnie
+  voice: 300
+Gorbie:
+  actor: gorbie
+  voice: 220
+
+Blue Thing 1:
+  actor: blue_thing_1
+  voice: 760
+Blue Thing 2:
+  actor: blue_thing_2
+  voice: 700
+Blue Thing 3:
+  actor: blue_thing_3
+  voice: 820
+Blue Thing 4:
+  actor: blue_thing_4
+  voice: 880
+Shopkeeper:
+  actor: shopkeeper_1
+  voice: 600
+
+Enemies:
+  actor: encounter
+  voice: 180
+  style: shout
+  label: ""
+Giant Ghost:
+  actor: encounter
+  voice: 110
+  label: ""
+Soldiers:
+  actor: encounter
+  voice: 200
+  style: shout
+The People's Patrol:
+  actor: encounter
+  voice: 200
+  style: shout
+Tank:
+  actor: encounter
+  voice: 120
+  style: shout
+  label: ""
+
+Pro-Democracy Student:
+  actor: student_lower
+  voice: 480
+Student Shopkeeper:
+  actor: student_upper
+  voice: 520
+  label: Pro-Democracy Student
+South Street Student:
+  actor: south_student
+  voice: 480
+  label: Pro-Democracy Student
+
+The People's Grocer:
+  actor: street_grocer
+  voice: 380
+The People's Doctor:
+  actor: street_neighbour
+  voice: 330
+The People's Cyclist:
+  actor: street_cyclist
+  voice: 430
+The People's Shopper:
+  actor: street_extension_customer
+  voice: 390
+The People's Commuter:
+  actor: street_extension_neighbour
+  voice: 350
+The People's Alley Walker 1:
+  actor: alley_notice_1
+  voice: 340
+The People's Alley Walker 2:
+  actor: alley_notice_2
+  voice: 380
+The People's Alley Walker 3:
+  actor: alley_notice_3
+  voice: 410
+The People's Alley Walker 4:
+  actor: alley_notice_4
+  voice: 330
+The People's Alley Walker 5:
+  actor: alley_notice_5
+  voice: 360
+The People's West Resident:
+  actor: alley_west_resident
+  voice: 390
+The People's Inner Resident:
+  actor: alley_inner_resident
+  voice: 370
+# The two ninjas sparring on the martial arts street, both named Ninja on their balloons.
+Ninja 1:
+  actor: ninja_1
+  voice: 250
+  label: Ninja
+Ninja 2:
+  actor: ninja_2
+  voice: 280
+  label: Ninja
+The People's East Resident:
+  actor: alley_east_resident
+  voice: 410
+The People's Backstreet Resident:
+  actor: alley_extension_west_resident
+  voice: 330
+The People's Far Resident:
+  actor: alley_extension_east_resident
+  voice: 380
+The People's Student:
+  actor: passerby_1
+  voice: 480
+The People's School Resident:
+  actor: school_dead_end_guide
+  voice: 350
+The People's Theater Resident:
+  actor: theatre_dead_end_guide
+  voice: 390
+The People's Books Resident:
+  actor: books_dead_end_guide
+  voice: 360
+The People's Market Seller:
+  actor: passerby_2
+  voice: 360
+The People's Resident:
+  actor: passerby_3
+  voice: 410
+
+Berlin Tour Guide:
+  actor: german_1
+  voice: 360
+  label: Tour Guide
+Berlin Souvenir Hunter:
+  actor: german_2
+  voice: 410
+  label: Souvenir Hunter
+Berlin Nephew:
+  actor: german_3
+  voice: 380
+  label: Nephew
+Berlin Ordinary Citizen:
+  actor: grey_hat
+  voice: 200
+  label: Ordinary Citizen
+
+Berlin Strike Leader:
+  actor: strike_leader
+  voice: 345
+  label: Construction Worker
+
+Boss:
+  actor: boss
+  voice: 140
+  style: boss
+  label: ""
+  color: "#8b0000"

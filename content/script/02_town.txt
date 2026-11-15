@@ -1,0 +1,25 @@
+# The town: arrival, the Blue Things, and the shopkeepers.
+
+== town_arrive ==
+Ronnie: We can come back home to rest, if needed.
+
+== blue_thing_1 ==
+Blue Thing 1: The special "A-Star" has been taught for generations. Use it to attack all enemies!
+Blue Thing 1: The special "Cherry Chomp" is its counterpart. Use it to restore everyone's health!
+Blue Thing 1: ...if you have enough "Energy" for them, that is.
+
+== blue_thing_2 ==
+Blue Thing 2: After battles, make sure you heal with Bandages and recover Energy with "Coke".
+
+== blue_thing_3 ==
+Blue Thing 3: If you return from the maze, the dot trails reappear.
+Blue Thing 3: But so will those pesky ghosts.
+
+== blue_thing_4 ==
+# In the house, from the party's first steps into Berlin on (the owner, 2026-10-20).
+Blue Thing 4: If you ever need to avoid a tactical nuke...
+Blue Thing 4: ...just be fast enough!
+Blue Thing 4: Take the Beijing alleyways to the water temple to learn how.
+
+== shopkeeper ==
+[shop]

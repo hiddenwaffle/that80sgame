@@ -1,0 +1,314 @@
+# The field: soldiers, the tank, and the Pro-Democracy Students.
+
+== field_arrive ==
+[gather]
+# The apparent destination is Berlin, with no invitation to investigate yet (the owner's lines, 2026-11-13).
+Ronnie: Berlin's over there to the right.
+Gorbie: Let's go.
+Gorbie: Don't know what's going on around here...
+[line_up]
+
+== warsaw_retry ==
+[walk olli to warsaw_retry_olli]
+[walk ronnie to warsaw_retry_ronnie]
+[walk gorbie to warsaw_retry_gorbie]
+[face olli gorbie sideways]
+[face ronnie olli sideways]
+[face gorbie olli sideways]
+Ronnie: We were too slow.
+Gorbie: I agree, we need to find a way to get faster.
+[face street_grocer olli sideways]
+[run street_speed_hint]
+[line_up]
+
+# The patrols' cries hint at speed (the owner, 2026-10-20). Written without tone marks, as pinyin usually is on signs
+# and in names; each keeps its tone-marked spelling and meaning above it. The four take turns among the nine patrols
+# (content/data/encounters.yaml); the fly-by banner of sentry commands is gone, hard to read at any speed (the owner,
+# 2026-10-20: "remove it and let the yelling be the rotation").
+== cry_field_1 ==
+# Bīng guì shén sù: in war, speed is what counts.
+The People's Patrol: Bing gui shen su!
+
+== cry_field_3 ==
+# Qí jí rú fēng: swift as the wind (The Art of War).
+The People's Patrol: Qi ji ru feng!
+
+== cry_field_4 ==
+# Fēng chí diàn chè: swift as wind and lightning.
+The People's Patrol: Feng chi dian che!
+
+== cry_field_5 ==
+# Sù zhàn sù jué: a quick fight for a quick end.
+The People's Patrol: Su zhan su jue!
+
+== cry_tank ==
+# Zhǐ lǎohǔ: paper tiger.
+Tank: Zhi laohu!
+
+== cry_tank_backups ==
+# Placeholder for the owner to replace: Sorry, we're late!
+The People's Patrol: Duibuqi, women chidao le!
+
+# The square's entrance starts the encounter before anyone can walk around the tank.
+# A harmless near miss lands first; the normal battle opening then forms up the party.
+== tank_approach ==
+[warning_shot tank]
+[battle tank]
+
+== student_thanks ==
+[face student_lower leader sideways]
+Pro-Democracy Student: Thank you for saving us.
+Pro-Democracy Student: As a token of our appreciation, please take one of our temple's speed pellets.
+[drop speed_pellet student_lower]
+[flag students_thanked]
+
+== student_shop ==
+[shop beijing]
+
+# Confirm at the square's statue, once the tank is gone: narration, not a speech bubble (the owner's lines, 2026-11-09).
+== statue_goddess ==
+> The Pac-Goddess
+> (of Democracy)
+
+# Provisional conversations from the owner's pacing direction, 2026-10-10.
+# Main street: official cheer and a quick trip to Berlin (the owner, 2026-10-11: cheerful official or state-shop language
+# in place of free-market prosperity; drafted 2026-10-15 for the dialogue review). No line promises safety.
+# The camera stays with the party.
+== street_berlin ==
+[run street_berlin_directions !warsaw_speed_hint]
+[run street_speed_hint warsaw_speed_hint]
+
+== street_berlin_directions ==
+The People's Grocer: Thanks to the Great Chairman, we met our cabbage quota.
+
+== street_speed_hint ==
+The People's Grocer: Faster?
+The People's Grocer: Visit the northern water temple.
+The People's Grocer: They train fighting monks.
+The People's Grocer: You can get there through these alleyways.
+
+== street_closed ==
+The People's Doctor: The People's Hospital is ready for the clock to strike midnight.
+The People's Doctor: (The Doomsday Clock)
+
+== street_tank ==
+The People's Cyclist: The back streets are a maze, that's why I only ride on The People's Roads.
+
+== street_hurry ==
+The People's Shopper: The state store usually meets our baseline needs.
+
+== street_prosperity ==
+The People's Commuter: I survived the death panels once more.
+
+== south_street_student ==
+South Street Student: You're from a maze? My cousin just moved from Germany to an empty house in a maze somewhere.
+
+# Deeper in the entrance alleys: the cheerful account gives way to practical warnings about closures.
+# Nobody mentions the students until the martial-arts cross street.
+== alley_notice_1 ==
+The People's Alley Walker 1: Some of the streets are closed off.
+
+== alley_notice_2 ==
+The People's Alley Walker 2: You can walk through here.
+The People's Alley Walker 2: Don't tell the patrols, though.
+
+== alley_notice_3 ==
+The People's Alley Walker 3: My neighbor went this way yesterday and disappeared.
+
+== alley_notice_4 ==
+The People's Alley Walker 4: They've been closing off parts of the city.
+
+== alley_notice_5 ==
+The People's Alley Walker 5: More street barriers went up last night.
+
+== alley_west_closed ==
+The People's West Resident: The end is blocked.
+The People's West Resident: Try the alley to the right.
+[run alley_entry_open]
+[drop alley_west_gift alley_west_resident alley_west_gift_intro]
+
+# The first conversation replaces solid storage with pushable clutter, even if the gift is left behind.
+== alley_entry_open ==
+[flag field_entry_open]
+[flag field_entry_movable_1]
+[hide entry_disguise_solid_1]
+[flag field_entry_movable_2]
+[hide entry_disguise_solid_2]
+[flag field_entry_movable_3]
+[hide entry_disguise_solid_3]
+[flag field_entry_movable_4]
+[hide entry_disguise_solid_4]
+[flag field_entry_movable_5]
+[hide entry_disguise_solid_5]
+
+== alley_still_open ==
+The People's Inner Resident: This passage leads to the martial arts street.
+
+# The ninjas sparring on the pavement right of the open alley (the owner, 2026-11-07). Talking to either, they stop and
+# stand apart, the party facing them; the price of the forbidden SPECIAL (Ronnienomics!) is Ronnie's Cherry Chomp. A
+# no leaves it to ask again; a yes is the lesson, after which they are gone (gone_when on the map).
+== ninja_offer ==
+# The camera on the left ninja through the talk (the owner: on a phone it was off the conversation), back after.
+[camera ninja_1]
+[walk_together ninja_1 ninja_1_apart ninja_2 ninja_2_apart olli ninja_talk_olli ronnie ninja_talk_ronnie gorbie ninja_talk_gorbie]
+[face ninja_1 ronnie sideways]
+[face ninja_2 ronnie sideways]
+[face olli right]
+[face ronnie right]
+[face gorbie right]
+# The repeat first: the first meeting sets ninja_met, and would run it too.
+[run ninja_again ninja_met]
+[run ninja_meet !ninja_met]
+[ask "Trade Ronnie's Cherry Chomp special for a new move that disengages from combat (and responsibility)?" ninja_teach]
+[camera leader]
+
+== ninja_meet ==
+[flag ninja_met]
+Ronnie: Look, Ninjas!
+# His aside to Olli and Gorbie, behind him on the left (the owner, 2026-11-08), then back to the ninjas.
+[face ronnie left]
+Ronnie: (I was kidnapped by some once.)
+[face ronnie right]
+Ninja 1: You look like a bad enough dude,
+Ninja 2: Wanna learn a FORBIDDEN SPECIAL MOVE?
+Ronnie: Everything has a price, what's yours?
+Ninja 1: ALL{pause 0.4} your{pause 0.4} cherries.
+
+== ninja_again ==
+Ninja 2: Wanna learn a FORBIDDEN SPECIAL MOVE?
+Ninja 1: ALL{pause 0.4} your{pause 0.4} cherries.
+
+# Ronnie's cherries piled between them, a beat, the nine cuts of the kuji-kiri, and they are gone in a puff, leaving smoke
+# bombs, cans, where the cherries were (ninja_bombs, the owner's line); then Ronnie takes them.
+== ninja_teach ==
+[flag ronnie_trained]
+[kuji_kiri ronnie ninja_1 ninja_2 ninja_pile ninja_bombs]
+
+== ninja_bombs ==
+Ronnie: Look! Supply-side diversions!
+
+== alley_east_closed_first ==
+The People's East Resident: Closed here, but there is an alternate route elsewhere.
+
+== alley_east_closed_directions ==
+The People's East Resident: Closed here.
+The People's East Resident: The alley to the left is open, though.
+
+== alley_east_closed ==
+[run alley_east_closed_first field_entry_first_3,!warsaw_speed_hint]
+[run alley_east_closed_directions !field_entry_first_3]
+[run alley_east_closed_directions field_entry_first_3,warsaw_speed_hint]
+[run alley_entry_open]
+[drop alley_east_gift alley_east_resident alley_east_gift_intro]
+
+== alley_extension_closed_first ==
+The People's Backstreet Resident: This end is closed, but another is open.
+
+== alley_extension_closed_directions ==
+The People's Backstreet Resident: No way through.
+The People's Backstreet Resident: Try the second alley from the left.
+
+== alley_extension_closed ==
+[run alley_extension_closed_first field_entry_first_4,!warsaw_speed_hint]
+[run alley_extension_closed_directions !field_entry_first_4]
+[run alley_extension_closed_directions field_entry_first_4,warsaw_speed_hint]
+[run alley_entry_open]
+[drop alley_extension_west_gift alley_extension_west_resident alley_extension_west_gift_intro]
+
+== alley_far_closed_first ==
+The People's Far Resident: This end is closed, but there is a path elsewhere.
+
+== alley_far_closed_directions ==
+The People's Far Resident: Dead end here.
+The People's Far Resident: Second alley from the left might be open.
+
+== alley_far_closed ==
+[run alley_far_closed_first field_entry_first_5,!warsaw_speed_hint]
+[run alley_far_closed_directions !field_entry_first_5]
+[run alley_far_closed_directions field_entry_first_5,warsaw_speed_hint]
+[run alley_entry_open]
+[drop alley_extension_east_gift alley_extension_east_resident alley_extension_east_gift_intro]
+
+# The guides say what they saw, not which way to go (the owner, 2026-10-23: they "didn't notice any patrols" down
+# certain alleyways). Placeholders until the dialogue pass before UAT.
+== clue_1 ==
+The People's Student: Pro-democracy students have been disappearing.
+The People's Student: We think they're being held by the north lake.
+The People's Student: I didn't notice anyone patrolling the far left alley, by the school.
+
+== clue_2 ==
+The People's Market Seller: Didn't see a patrol in the third alley from the left, by the theater.
+
+== clue_3 ==
+The People's Resident: No patrols in the second alley from the left, by the first bookshop.
+
+# A costly wrong turn gives a clear answer. Street riddles, if wanted later, must keep these hints direct.
+== school_plain_hint ==
+The People's School Resident: Going north? Take the far left alley, by the school.
+[drop school_dead_end_gift school_dead_end_guide school_dead_end_gift_intro]
+
+== theatre_plain_hint ==
+The People's Theater Resident: Take the alley just right of the theater to go north.
+[drop theatre_dead_end_gift theatre_dead_end_guide theatre_dead_end_gift_intro]
+
+== books_plain_hint ==
+The People's Books Resident: Take the second alley from the left, by the first bookshop.
+[drop books_dead_end_gift books_dead_end_guide books_dead_end_gift_intro]
+
+# A one-time gift flourish, before the pellet bounces out.
+== alley_west_gift_intro ==
+The People's West Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== alley_east_gift_intro ==
+The People's East Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== alley_extension_west_gift_intro ==
+The People's Backstreet Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== alley_extension_east_gift_intro ==
+The People's Far Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== school_dead_end_gift_intro ==
+The People's School Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== theatre_dead_end_gift_intro ==
+The People's Theater Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+== books_dead_end_gift_intro ==
+The People's Books Resident: It's dangerous to go further! Take this!
+[sound gift_reveal]
+
+# The tank crumbles where battle ended, in the fight's own framing (encounters.yaml keep_framing). The student stays
+# beside the star and drops the pellet nearby. The camera follows the handoff until the pellet lands, then comes back
+# to the party.
+== tank_after ==
+[explode tank tank_wreck]
+[camera student_lower]
+[run student_thanks]
+[wait 0.8]
+[camera party]
+
+# Ronnienomics! failing in a fight (content/data/specials.yaml): Ronnie's excuse once the smoke has cleared off the party
+# and the FAILED panel has gone. One after another, from wherever the fight's draw starts.
+== ronnienomics_excuse_congress ==
+Ronnie: Don't look at me. Blame Congress!
+
+== ronnienomics_excuse_market ==
+Ronnie: Hey, the S&P is up, isn't it?
+
+== ronnienomics_excuse_trickle ==
+Ronnie: The invisible hand skipped the quality control of these smoke bombs.
+
+# Ronnienomics! getting away (content/data/specials.yaml), back on the map with Ronnie on top of the party's stack. Each
+# once in a game: the first when items used in the fight came back with the retry.
+== ronnienomics_back_items ==
+Ronnie: We got our items back, thanks to future taxpayers.
+
+== ronnienomics_back_dots ==
+Ronnie: We disappeared out of there like the dots we were supposed to trickle down.

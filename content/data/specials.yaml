@@ -1,0 +1,44 @@
+# Special moves. Every member knows the first two; Ronnie can trade Cherry Chomp for Ronnienomics!.
+# cost: how far the user's time bar drops after using it (a plain attack costs 100).
+
+a_star:
+  name: A-star Maneuver
+  mp: 10
+  cost: 200
+  target: all_enemies
+  power: 1.5            # damage is 1.5 x the user's Strength
+  message: "{actor} waka-wakaed {amount} damage to all"
+
+cherry_chomp:
+  name: Cherry Chomp
+  mp: 12                # not 7: a full heal for 7 MP made most fights safe
+  cost: 150
+  target: party
+  heal: full
+  revive: false
+  message: "Standing party members' health restored! And without universal health care!"
+
+# Taught by the ninja in the martial arts street, if the player takes it: Ronnie's in place of Cherry Chomp. A quick retry
+# (the owner, 2026-11-07): the party slips away in smoke and the fight starts over from its beginning, as after a wipe,
+# with no defeat page. Free and unlimited ("if the party is using it for real, they might already be out of energy").
+# It fails one time in ten, and always against the Warsaw Pac (encounters.yaml no_escape); then the smoke clears off the
+# party, still there, a FAILED panel slams across to a mocking bar of mid-80s synth pop, and Ronnie makes an excuse (the
+# owner: "Ronnie blames congress or points to the S&P or something very on-the-nose"). His turn is spent.
+ronnienomics:
+  name: Ronnienomics!
+  shout: "NINJA VANISH!"
+  mp: 0
+  cost: 100
+  target: party
+  member: ronnie
+  flag: ronnie_trained
+  replaces: cherry_chomp
+  escape:
+    fails: 0.1
+    excuses: [ronnienomics_excuse_congress, ronnienomics_excuse_market, ronnienomics_excuse_trickle]
+    # Back on the map, Ronnie on top of the stack for once, each line once in a game; after both, he says nothing.
+    quips: { items_back: ronnienomics_back_items, got_away: ronnienomics_back_dots }
+    # The FAILED panel's line: "DEBT: 1.9 TRILLION" the first time in a game, then 186% more each time it fails after
+    # that (the owner, 2026-11-07; shortened so it is not tiny on the smallest phones).
+    debt: { first: 1.9e12, rise: 1.86 }
+  message: "{actor} slipped the party out of the fight!"

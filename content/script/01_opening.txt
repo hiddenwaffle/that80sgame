@@ -1,0 +1,46 @@
+# The opening narration and the scene in the house, with the house map's music throughout.
+# The wording follows option A in docs/tone_samples.md.
+
+== opening ==
+# Set the conversation pose before the title reveals the room and narration begins.
+[place ronnie ronnie_spot]
+[place gorbie gorbie_spot]
+[face ronnie right]
+[face gorbie left]
+[face olli left]
+> A long long time ago,{br}(1980s)
+> In a place far, far away{br}(deranged arcade machine)
+[run house_opening]
+
+== house_opening ==
+[music house]
+[place ronnie ronnie_spot]
+[place gorbie gorbie_spot]
+[face ronnie right]
+[face gorbie left]
+Ronnie: Guys, I'm so sad.
+[face gorbie left]
+Gorbie: What's wrong, Ronnie?
+Gorbie: Feeling the weight of the free market?
+Ronnie: No, I'm good. My credit card isn't maxed out yet.
+Gorbie: What is troubling you, comrade?
+[face ronnie right]
+Ronnie: I feel bad that we have such great freedom, but Beyond the Iron Curtain they do not.
+Ronnie: Perhaps we should do something about that?
+Gorbie: Yeah, why not?
+Gorbie: Starting now, we go on a quest to stop something called "communism".
+Ronnie: Olli, we leave it in your hands to guide us to the source of this "communism".
+[flag quest_started]
+[line_up]
+
+# Save stars run this scene when someone needs healing. At full HP/MP their trigger saves without stopping movement.
+== house_rest ==
+[gather]
+[rest]
+[save]
+
+# The other save stars, walked onto in the same way: the stops that appear at the end of a map once it is cleared.
+== star_rest ==
+[gather]
+[rest]
+[save]

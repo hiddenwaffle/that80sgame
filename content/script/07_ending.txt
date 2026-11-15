@@ -1,0 +1,24 @@
+# The closing narration over the map, then the epilogue's three pictures.
+
+== closing ==
+[music ending]
+[celebrate party]
+# The view is narrowing back to the arcade's since the ending music came in; it is still closing in as the map breaks up
+# for the first picture, and arrives once that has spun in.
+[arcade back]
+> Neverminding the factual inconsistencies of this story, Ronnie, Gorbie, and Olli managed to affect these events in world history...
+> With the end of communism, the area beyond The Wall crumbled into submission to the capitalist "giants".
+[run epilogue]
+
+== epilogue ==
+# The arcade's view stays through the pictures, credits and FIN.
+# Berlin breaks into the flashback's blocks and comes back as the credits' blue ground as the first paper flies in.
+[credits ground]
+[picture separate_ways]
+> Eventually, more economic freedom crept into the rest of the world.
+> And thus, our heroes went their separate ways...
+[picture fireside]
+> Gorbie and Ronnie created a free world through politics...
+[picture ceo]
+> ... a free world that Olli took over, as CEO of the largest telecom company in the world.
+[fin]

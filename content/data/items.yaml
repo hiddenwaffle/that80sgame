@@ -1,0 +1,24 @@
+# Items and their default prices in Dots. Named shops can override prices in shops.yaml.
+
+tonic:
+  name: Bandage
+  plural: Bandages
+  price: 10
+  hp: 40
+  revive: false
+  message: "{target} recovered {amount} Health"
+
+ether:
+  name: '"Coke"'
+  plural: '"Cokes"'
+  price: 20
+  mp: 15
+  message: "{target} regenerated {amount} Energy"
+
+revival:
+  name: 1UP
+  plural: 1UPs
+  price: 30
+  hp: 40
+  revive: true
+  message: "{target} got back up with {amount} Health"

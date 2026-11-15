@@ -1,0 +1,17 @@
+# The ending newspaper pages. The masthead and dateline come from frame.yaml.
+# Picture captions remain in content/script/07_ending.txt.
+
+separate_ways:
+  headline: Trio Goes Separate Ways
+  stamp: EXTRA!
+  issue: 5
+
+fireside:
+  headline: Fireside Chat Ends Cold War
+  stamp: EXCLUSIVE
+  issue: 6
+
+ceo:
+  headline: From Zero Dots to Full Reception
+  stamp: FINAL EDITION
+  issue: 7

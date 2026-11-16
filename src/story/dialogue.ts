@@ -326,6 +326,10 @@ export class Dialogue {
         c.pause -= dt;
         return;
       }
+      // When in this step each letter came due: after a slow frame the game types several letters in one step, and at speed
+      // two, and each chirp keeps its letter's own moment (Audio.blip, src/audio/blip_clock.ts).
+      const from = c.carry, stepStart = this.game.time - dt, cps = c.cps;
+      let typed = 0;
       c.carry += c.cps * dt;
       while (c.carry >= 1 && !c.done) {
         const p = c.pieces[c.piece];
@@ -358,7 +362,9 @@ export class Dialogue {
         c.char++;
         if (ch.trim()) {
           c.carry -= 1;
-          if (c.blipCount++ % 2 === 0) this.game.audio.blip(c.voice);
+          typed++;
+          const due = cps > 0 ? Math.min(dt, Math.max(0, (typed - from) / cps)) : 0;
+          if (c.blipCount++ % 2 === 0) this.game.audio.blip(c.voice, stepStart + due);
         }
       }
       c.balloon.setVisible(c.shown);

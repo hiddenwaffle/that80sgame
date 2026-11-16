@@ -6,6 +6,7 @@ import { REVIVAL_VOICES } from './revival.ts';
 import { GIFT_NOTES } from './gift.ts';
 import { BridgeMix } from './bridge_mix.ts';
 import { BlastHearing } from './blastHearing.ts';
+import { BLIP_SOONEST, placeBlip, type BlipGrid } from './blip_clock.ts';
 import { musicLevelGain } from './music_levels.ts';
 import { SR } from './synth/dsp.ts';
 import { DIVE_S, diveNotches } from './diveTiming.ts';
@@ -646,9 +647,14 @@ export class AudioSystem {
   }
 
   /** The typing sound for a speaker's voice. */
-  blip(pitch: number): void {
+  /** The grid typing chirps keep to on the audio clock (src/audio/blip_clock.ts). */
+  private blipGrid: BlipGrid | null = null;
+
+  /** A typing chirp, its letter typed at game time `at` (Dialogue): it follows the last by the game time between them. */
+  blip(pitch: number, at?: number): void {
     if (!this.ctx || this.ctx.state !== 'running') return;
-    const t = this.ctx.currentTime + 0.002;
+    let t = this.ctx.currentTime + BLIP_SOONEST;
+    if (at !== undefined) ({ start: t, grid: this.blipGrid } = placeBlip(this.blipGrid, this.ctx.currentTime, at));
     const styled = this.styled?.voice(pitch);
     if (styled) return this.buffer(styled, t);
     // Not in yet, or never to be: the line types silent, unless the address asks for the first draft's blip.

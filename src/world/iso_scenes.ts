@@ -1088,11 +1088,11 @@ function devil(g: Graphics, glow: Graphics, x: number, y: number, R: number): vo
     g.poly(flat(pts)).stroke({ width: lw * 0.9, color: INK, join: 'round' });
   };
   horn(-Math.PI / 2 + 0.55, 1, true);
-  // The body: a pac's, its upper lip level below the eyes and its lower jaw dropped, open toward the left.
+  // The body: a pac's, its upper lip level below the eyes and its lower jaw dropped, open toward the left, and like every
+  // pac's mouth the opening shows what is behind it (the owner, 15 Nov: "you don't actually see through it").
   const outline: P[] = ballPolygon('left', OPEN, R).map(([a, b]) => [cx + a, cy + b] as P);
-  const [upper, lower] = jawEdges('left', OPEN, R, R) as [Edge, Edge];
-  const apex: P = [cx + upper[0], cy + upper[1]];
-  const aUpper = Math.atan2(upper[3], upper[2]), aLower = Math.atan2(lower[3], lower[2]);
+  const [, lower] = jawEdges('left', OPEN, R, R) as [Edge, Edge];
+  const aLower = Math.atan2(lower[3], lower[2]);
   g.poly(flat(outline)).fill(RED);
   // The highlight, up and to the left.
   g.ellipse(cx - R * 0.3, cy - R * 0.5, R * 0.36, R * 0.24).fill({ color: 0xff7a62, alpha: 0.45 });
@@ -1121,8 +1121,6 @@ function devil(g: Graphics, glow: Graphics, x: number, y: number, R: number): vo
   // The fire's light along the underside, to the lower jaw.
   g.poly(flat(arc(cx, cy, R * 0.955, 0.35, aLower - 0.08, 40)), false).stroke({ width: lw * 1.1, color: 0xff9a3a, alpha: 0.85, cap: 'round' });
   for (const [wd, a] of [[lw * 5, 0.12], [lw * 2.6, 0.2]] as const) glow.poly(flat(arc(cx, cy, R * 1.01, 0.25, aLower - 0.05, 40)), false).stroke({ width: wd, color: 0xff6a1e, alpha: a, cap: 'round' });
-  // The mouth: dark inside.
-  g.poly(flat([apex, ...arc(cx, cy, R * 0.995, aLower, aUpper, 16)])).fill(0x3d0507);
   // The near horn, over the crown.
   horn(-Math.PI / 2 - 0.5, -1, false);
   // Eyes where a pac's are, mirrored to face left, looking down at whoever stands there.
@@ -1174,22 +1172,30 @@ const pacDevil = (s: Stage): void => {
   // The floor: dark tiles, each with its seam, lit red by the fires.
   const fr = rng(66);
   for (let x = X0; x < X1; x++) for (let y = Y0; y < Y1; y++) g.poly(flat([p(x, y), p(x + 1, y), p(x + 1, y + 1), p(x, y + 1)])).fill(tone(0x241008, (fr() - 0.5) * 0.25)).stroke({ width: 2.2, color: 0x4a1a0c });
-  // Flames all about, all alike but scattered; taller behind the devil.
+  // Flames all about, all alike but scattered; taller behind the devil. Fewer and bigger, one at most in each block of
+  // 1.5 tiles (the owner, 15 Nov: "maybe there should be fewer flames but they are bigger?").
+  const STEP = 1.5, BIG = 1.5;
   const clear = (x: number, y: number) => {
     if (x > RX0 - 0.6 && x < RX1 + 0.4 && y > RY0 - 0.6 && y < RY1 + 0.4) return true;
     // Nothing in front of the devil's grin, between it and the trio.
     if (x > RX0 - 1.6 && x < RX0 + 0.6 && y > RY0 && y < RY1 + 1.6) return true;
     return trio.some(([, tx, ty]) => Math.abs(x - tx) + Math.abs(y - ty) < 1.6) || (x + y > 6.0 && x + y < 9.4 && x - y > -1.8 && x - y < 3.6);
   };
+  // The two that would stand behind the devil's grin, showing through its open mouth, slide that many tiles left along their
+  // rows into open floor (the owner, 15 Nov: "move those two flame pictures between to the left into that open space").
+  const slide: Record<string, number> = { '7,4': 3, '8,4': 1.75 };
   const rows = new Map<number, Array<[number, number, number, boolean]>>();
-  for (let x = X0; x < X1; x++) for (let y = Y0; y < Y1; y++) {
-    const cxg = x + 0.2 + fr() * 0.6, cyg = y + 0.2 + fr() * 0.6;
+  for (let i = 0; X0 + i * STEP < X1; i++) for (let j = 0; Y0 + j * STEP < Y1; j++) {
+    let cxg = X0 + STEP * (i + 0.2 + fr() * 0.6), cyg = Y0 + STEP * (j + 0.2 + fr() * 0.6);
     if (fr() < 0.42 || clear(cxg, cyg)) continue;
+    const by = slide[`${i},${j}`] ?? 0;
+    cxg -= by;
+    cyg += by;
     const behind = Math.max(0, Math.min(1, ((RX0 + RY0 + 2) - (cxg + cyg)) / 6));
-    const size = 64 * (0.85 + fr() * 0.3) * (1 + behind * 0.6);
-    const row = rows.get(x + y) ?? [];
-    row.push([cxg, cyg, size, (x - y) % 4 === 0]);
-    rows.set(x + y, row);
+    const size = 64 * BIG * (0.85 + fr() * 0.3) * (1 + behind * 0.6);
+    const d = Math.floor(cxg) + Math.floor(cyg), row = rows.get(d) ?? [];
+    row.push([cxg, cyg, size, (i - j) % 4 === 0]);
+    rows.set(d, row);
   }
   for (const [d, row] of rows) s.draw(d + 1, (f) => {
     for (const [x, y, size, flip] of row) {

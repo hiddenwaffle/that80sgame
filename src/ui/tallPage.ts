@@ -342,7 +342,13 @@ export class TallPage implements Screen {
       // An ending's stamp goes in the photo's top left corner, inside it, where none of the three pictures has a face; at the
       // game-over page's spot it covered Gorbie's in the separate ways picture.
       if (this.opts.narrated) st.position.set(Math.round(pad + Math.max(photoW * 0.25, st.width / 2 + 4)), Math.round(y + Math.max(photoH * 0.14, st.height / 2 + 4)));
-      else st.position.set(Math.round(pad + photoW * 0.68), Math.round(y + photoH * 0.7));
+      else {
+        // The game-over stamp in the photo's lower right, off the most of the devil and still inside the photo however low it
+        // is (the owner, 15 Nov: "the game over sign needs to be a little down and to the right so it doesn't overlap so much").
+        const c = Math.abs(Math.cos(st.rotation)), sn = Math.abs(Math.sin(st.rotation));
+        const hw = (st.width * c + st.height * sn) / 2 + 6, hh = (st.width * sn + st.height * c) / 2 + 6;
+        st.position.set(Math.round(pad + Math.min(photoW * 0.74, photoW - hw)), Math.round(y + Math.min(photoH * 0.8, photoH - hh)));
+      }
       s.addChild(st);
       if (this.opts.narrated) this.stampMark = st;
     }

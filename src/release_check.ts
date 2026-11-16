@@ -1,3 +1,4 @@
+import { addressStore } from './address_store.ts';
 import { BUILD } from './build_stamp.ts';
 
 /**
@@ -17,7 +18,7 @@ import { BUILD } from './build_stamp.ts';
 
 /** How soon after asking the site, with nothing newer there, another missing file asks again. */
 export const RECHECK_MS = 60_000;
-/** The build the page was last reloaded for, this tab only (sessionStorage). */
+/** The build the page was last reloaded for, this tab only (sessionStorage, or the address where storage is refused). */
 const RELOADED_KEY = 'that80sgame.reloadedFor';
 
 export interface ReleaseWatch {
@@ -90,6 +91,9 @@ export const releaseWatch = createReleaseWatch({
   // A query of its own, past the site's caches as well as the browser's.
   version: () => fetch(new URL(`version.json?t=${Date.now()}`, document.baseURI), { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
   now: () => performance.now(),
-  storage: typeof sessionStorage === 'undefined' ? null : session(),
+  // Read only inside session()'s try: where the browser refuses storage the getter throws, `typeof` included, and that read
+  // stopped the page before the game started (the owner's browser, 15 Nov: "SecurityError: The operation is insecure").
+  // Refused, the note goes in the address (src/address_store.ts), so a page that comes back old does not reload again.
+  storage: session() ?? addressStore,
   reload: () => location.reload(),
 });

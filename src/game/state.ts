@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { addressStore, storageRefused } from '../address_store.ts';
 import type { Dir } from '../art/geom.ts';
 import type { Content } from '../content/content.ts';
 
@@ -160,12 +161,19 @@ export function requirementsMet(s: GameState, requires: unknown): boolean {
 }
 
 const SAVE_KEY = 'that80sgame.save.v1';
+/** Where the browser refuses storage, the save is a save code in the address instead (src/address_store.ts). */
+const ADDRESS_SAVE = 'save';
 
 export function saveGame(s: GameState): boolean {
   try {
     // A finished game (the credits have rolled: Game.fin) has no save, so no later checkpoint, cleanup autosave or
     // developer save brings Continue back before a new game saves.
-    if (s.flags?.finished) localStorage.removeItem(SAVE_KEY);
+    if (storageRefused()) {
+      // Written, so nothing warns that progress could not be stored: a player who turned storage off knows save codes (the
+      // owner, 16 Nov: "I think that the game should just silently continue").
+      if (s.flags?.finished) addressStore.removeItem(ADDRESS_SAVE);
+      else addressStore.setItem(ADDRESS_SAVE, exportSave(s));
+    } else if (s.flags?.finished) localStorage.removeItem(SAVE_KEY);
     else localStorage.setItem(SAVE_KEY, JSON.stringify(s));
     return true;
   } catch {
@@ -176,6 +184,11 @@ export function saveGame(s: GameState): boolean {
 /** The saved game, if there is one and it fits this version of the content. */
 export function loadGame(c: Content): GameState | null {
   try {
+    if (storageRefused()) {
+      const code = addressStore.getItem(ADDRESS_SAVE);
+      const r = code ? importSave(code, c) : null;
+      return r && 'state' in r ? r.state : null;
+    }
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const r = checkState(JSON.parse(raw), c);
@@ -192,7 +205,7 @@ export function hasSave(c: Content): boolean {
 /** Whether the browser holds a save at all, readable or not. */
 export function saveExists(): boolean {
   try {
-    return localStorage.getItem(SAVE_KEY) !== null;
+    return (storageRefused() ? addressStore.getItem(ADDRESS_SAVE) : localStorage.getItem(SAVE_KEY)) !== null;
   } catch {
     return false;
   }

@@ -12,6 +12,7 @@
     "check": "node tools/check_content.ts",
     "release": "node tools/publish/release.ts",
     "release:public": "node tools/publish/release.ts --push",
+    "release:clean": "node tools/publish/publish.ts clean --all",
     "test": "node tools/run_unit_tests.ts",
     "shots": "node tools/screenshots.ts",
     "tileset": "node tools/make_tileset.ts"

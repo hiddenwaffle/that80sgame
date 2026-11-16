@@ -6,13 +6,14 @@ import type { Content } from '../content/content.ts';
 import { ArtQueue } from './artQueue.ts';
 import { artChapter, artGroups, nearbyArt } from './artGroups.ts';
 import { LOOK, slotFor } from '../render/look.ts';
+import { releaseWatch } from '../release_check.ts';
 
 /**
  * Generated art, dropped into the slots the code drawings fill. Each PNG or JPEG under `src/art/images/` is a
  * slot named by its path without the extension, such as `pictures/trio` or `props/palm`, and the
  * spec for every slot is in `docs/art_spec.md`. The title page draws no pictures of its own, so it appears at once; the
- * saved chapter (or the opening without a save) loads behind it. Maps and pictures wait for their own slots; later chapters prefetch
- * during play. A slot with no
+ * saved chapter (or the opening without a save) loads behind it. Maps and pictures wait for their own slots; the other chapters
+ * follow once that one is in, behind the title or in play. A slot with no
  * image keeps its code drawing, and with `?art=off` in the page's address every slot does, for comparing the two.
  * An image that fails to load, tried three times, leaves a hot pink box its size, plain enough that a player
  * says so (the owner, 2026-10-14).
@@ -90,6 +91,20 @@ function fileOf(path: string): string {
 }
 
 /**
+ * Told each time a waited-on picture fails for good, its hot pink box standing in: the game says why (Game.askLoadingProblem).
+ * The opening chapter loads before the game is made, so a failure then is kept and told as the game starts listening.
+ */
+let failedForGood: (() => void) | null = null;
+let failedUnheard = false;
+export function onArtFailed(fn: (() => void) | null): void {
+  failedForGood = fn;
+  if (fn && failedUnheard) {
+    failedUnheard = false;
+    fn();
+  }
+}
+
+/**
  * Loads one image into its slot, trying twice more a second apart, and answers whether the slot is settled. One that still
  * fails leaves its hot pink box. Waited on (`final`: a map change, with the loading page up), that failure is final; in the
  * background it is not, so the next wait for the slot asks again: a short network drop used to leave whole maps pink for
@@ -110,13 +125,24 @@ async function loadOne(pic: Pic, final: boolean): Promise<boolean> {
   } catch (e) {
     failed.set(pic.slot, failed.get(pic.slot) ?? { width: pic.width, height: pic.height });
     console.warn(`Art for ${pic.slot} did not load${final ? '' : ' in the background (it is tried again when it is needed)'}; a hot pink box stands in for it.`, e);
+    if (final) {
+      if (failedForGood) failedForGood();
+      else failedUnheard = true;
+    }
+    // It may be one a newer release took off the site (src/release_check.ts).
+    void releaseWatch.missing();
     // A failed request is not cached by Pixi's loader for a retry to reuse: unload it so the next try fetches afresh.
     void Assets.unload(pic.url).catch(() => undefined);
     return final;
   }
 }
 
-/** Warm only the chosen initial chapter until play begins (the title page draws no pictures of its own). */
+/**
+ * The chosen initial chapter first; once it is in, the others behind it, nearest first, whether the player is still on the
+ * title or playing (the owner, 15 Nov: "Any reason why the background loading couldn't happen right the initial loading is
+ * done?"). Before, they waited for play to begin, so a player who stayed on the title had none of them. A map entered meanwhile
+ * points the order from there (`prefetchArt`), and anything waited on goes ahead of them all (ArtQueue).
+ */
 export async function loadArt(on: boolean, content: Content, initialMap = content.party.start.map): Promise<void> {
   enabled = on;
   const all = on ? slotFiles(webpOnly) : [];
@@ -127,7 +153,7 @@ export async function loadArt(on: boolean, content: Content, initialMap = conten
   groups = artGroups(content,[...catalog.keys()]);
   // Waited on: startup holds the loading page until the opening chapter is in, so its three tries are final (the owner's three
   // tries, then pink, 2026-10-14), not background ones to be asked for again.
-  void queue.ensure(artForMap(initialMap),0);
+  void queue.ensure(artForMap(initialMap),0).then(() => prefetchArt(initialMap), () => undefined);
 }
 
 /** A chapter the player has just picked (a save code that checks out) comes in ahead of the background prefetch. */

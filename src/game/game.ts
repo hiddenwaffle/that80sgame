@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, type FederatedPointerEvent, type Texture } from 'pixi.js';
 import { FONT } from '../render/fonts.ts';
 import { dirVector, type Dir } from '../art/geom.ts';
-import { artForGroup, artForMap, artProgress, artReady, prefetchArt, whenArtReady } from '../art/images.ts';
+import { artForGroup, artForMap, artProgress, artReady, onArtFailed, prefetchArt, whenArtReady } from '../art/images.ts';
 import { CHAPTER_PICTURE } from '../art/pictures.ts';
 import { CreditsScreen } from '../ui/credits.ts';
 import { AudioSystem } from '../audio/audio.ts';
@@ -24,6 +24,8 @@ import { ControlsScreen } from '../ui/controls.ts';
 import { PartyMenu } from '../ui/partyMenu.ts';
 import { SaveCodeIn, SaveCodeOut } from '../ui/saveCode.ts';
 import { ConfirmScreen, finGround, Hud, PauseScreen, SettingsScreen, type Screen } from '../ui/screens.ts';
+import { SoundMark } from '../ui/soundMark.ts';
+import { releaseWatch } from '../release_check.ts';
 import { AchievementDetails, AchievementsScreen, AchievementToast } from '../ui/achievements.ts';
 import { earned, hundredList, loadProgress, saveProgress, type AchievementId, type Progress } from './achievements.ts';
 import { TallPage } from '../ui/tallPage.ts';
@@ -285,6 +287,19 @@ export class Game implements GameContext {
     // Every speaker's typing pitch, and the one a speaker with no voice types at (Dialogue), rendered up front.
     this.audio = new AudioSystem(this.settings, [...new Set([...Object.values(content.characters).map((c) => c.voice), 400])]);
     this.audio.introProgress = (name) => this.musicProgress(name);
+    // The sound failed for good: its mark shows, top left, until a reload (or a browser that refused sound lets it start).
+    // A browser that refused sound did so as the sound was made, before this was listening.
+    this.audio.onProblem = (p) => {
+      this.soundMark.shown = p !== null;
+      // The synthesizer's file may be one a newer release took off the site (src/release_check.ts); its worker is built into it.
+      if (p === 'load') void releaseWatch.missing();
+    };
+    this.soundMark.shown = this.audio.problem !== null;
+    // From now on a newer release found reloads on the loading page (`newerRelease`); before, main.ts reloaded.
+    releaseWatch.listen((sha) => this.newerRelease(sha));
+    // A picture that did not arrive, even tried again, leaves its hot pink box: the player is told why once the loading page
+    // has gone (`askLoadingProblem`).
+    onArtFailed(() => { this.loadingProblem ??= 'pending'; });
     if (this.settings.keys) this.input.setBindings(this.settings.keys);
     this.dialogue = new Dialogue(this);
     this.story = new Story(this);
@@ -305,7 +320,8 @@ export class Game implements GameContext {
     this.viewport.addChild(this.panel, this.panelMask);
     // No cabinet round the screen any more: in play the view sits over black (the owner, 2026-10-19).
     this.root.addChild(this.viewportMatte, this.titleLayer, this.viewport, this.battleHeaderLayer, this.hudEdgeLayer,
-      this.newspaperLayer, this.newspaperMask, this.pageLayer, this.pageMask, this.reducedMark);
+      this.newspaperLayer, this.newspaperMask, this.pageLayer, this.pageMask, this.reducedMark, this.soundLayer);
+    this.soundLayer.addChild(this.soundMark.container);
     this.reducedMark.text = this.msg('system', 'reduced_motion').toUpperCase();
     this.reducedMark.alpha = MARK_RED_ALPHA;
     this.reducedMark.eventMode = 'none';
@@ -473,6 +489,10 @@ export class Game implements GameContext {
     this.reducedMarkFoot = lh - safe.bottom - edge;
     this.reducedMarkEdge = edge;
     mark.position.set(safe.left + edge, this.reducedMarkFoot - mark.height);
+    // The sound's mark in the play area's top left corner, as Stats/Item is in its top right on a wide screen, and moved
+    // with the view as it is (`placeViewport`).
+    const soundEdge = Math.round(this.layout.unit * 0.5);
+    this.soundMark.layout(this.layout.unit, soundEdge, soundEdge);
     this.placeViewport();
     this.tapCatcher.clear().rect(0, 0, p.w, p.h).fill({ color: 0xffffff, alpha: 0.001 });
     this.drawBackdrop();
@@ -571,7 +591,7 @@ export class Game implements GameContext {
     const scale = 1 + (fit.w / p.w - 1) * amount;
     const x = home.x + (fit.x - home.x) * amount - p.x * scale;
     const y = home.y + (fit.y - home.y) * amount - p.y * scale;
-    for (const layer of [this.battleHeaderLayer, this.hudEdgeLayer]) {
+    for (const layer of [this.battleHeaderLayer, this.hudEdgeLayer, this.soundLayer]) {
       layer.scale.set(scale);
       layer.position.set(x + p.x * scale, y + p.y * scale);
     }
@@ -658,6 +678,79 @@ export class Game implements GameContext {
     this.title = new TitleMap(this, items, start);
     this.pushScreen(this.title);
     this.drawBackdrop();
+  }
+
+  /** The sound's mark (`soundMark`), shown while the sound has failed for good; tapped, it says why and offers a reload. */
+  private readonly soundMark = new SoundMark(() => this.askSoundReload());
+  /** Over everything, placed as the panel is drawn (`placeViewport`), so the mark sits in the play area's corner. */
+  readonly soundLayer = new Container();
+  private soundAsk: ConfirmScreen | null = null;
+
+  /**
+   * The sound's mark tapped: the sound is unavailable, and a reload tries again (the safe answer, Not now, first). The game is
+   * saved first where it is at rest, as before a reload for lost graphics, so the progress up to then is kept.
+   */
+  private askSoundReload(): void {
+    const p = this.audio.problem;
+    if (!p || this.soundAsk || this.halted) return;
+    const c: ConfirmScreen = new ConfirmScreen(this.pageGame, {
+      message: this.msg('system', 'sound_failed'),
+      yes: this.msg('system', 'sound_reload'),
+      no: this.msg('system', 'sound_not_now'),
+      onNo: () => {
+        this.soundAsk = null;
+        this.popScreen(c);
+      },
+      onYes: () => {
+        // Closed first, so the game is at rest and the save is made (it was not while the question was open).
+        this.soundAsk = null;
+        this.popScreen(c);
+        this.autosave();
+        location.reload();
+      },
+    });
+    this.soundAsk = c;
+    this.pushScreen(c);
+  }
+
+  /**
+   * The site holds a newer release than this page (src/release_check.ts), found when a file it fetches late did not arrive.
+   * On the loading page the game reloads by itself, saved first where it is at rest: nothing is under way there. A tab
+   * already reloaded for that release that still came back old (the site not yet new everywhere) does not again. Elsewhere
+   * the question about loading problems (`askLoadingProblem`) offers the reload, whatever kept the file away.
+   */
+  private newerRelease(sha: string): void {
+    if (this.halted || !loaderShowing() || releaseWatch.reloadedFor(sha)) return;
+    this.autosave();
+    releaseWatch.reload(sha);
+  }
+
+  /** A picture failed for good: the question waits for the loading page to go, and is asked once a visit. */
+  private loadingProblem: 'pending' | 'asked' | null = null;
+
+  /**
+   * Pictures did not arrive, even tried again, so hot pink boxes stand in for them: a dropped connection, or a newer release
+   * that took them off the site. The player is told, Reload picked to start; it saves first where the game is at rest (the
+   * owner, 15 Nov: "We should have reload as the default, instead of ignore. Hmm... it seems that we should explain if
+   * loading went wrong instead of them thinking that the game has pink boxes in it").
+   */
+  private askLoadingProblem(): void {
+    this.loadingProblem = 'asked';
+    if (this.halted) return;
+    const c: ConfirmScreen = new ConfirmScreen(this.pageGame, {
+      message: this.msg('system', 'loading_problems'),
+      yes: this.msg('system', 'loading_problems_reload'),
+      no: this.msg('system', 'loading_problems_ignore'),
+      yesPicked: true,
+      onNo: () => this.popScreen(c),
+      onYes: () => {
+        // Closed first: the game is at rest only under pages safe to save under, and a question is not one.
+        this.popScreen(c);
+        this.autosave();
+        location.reload();
+      },
+    });
+    this.pushScreen(c);
   }
 
   /** Before a new game replaces a save: start over, or go back (the safe answer, first). */
@@ -1087,6 +1180,10 @@ export class Game implements GameContext {
       console.error(`No map "${map}"`);
       return;
     }
+    // Leaving a map saves first, at rest as every autosave (the owner, 15 Nov: "exiting a map to the next map should be an
+    // autosave point right before entering the map transition"): a reload while the next map's pictures are awaited, as for
+    // a newer release (`newerRelease`), comes back to what was done on the map left.
+    this.autosave();
     this.transitioning = true;
     if (!artReady(artForMap(map))) await this.prepareArt(artForMap(map));
     const chapter = opts.instant ? null : this.chapterFor(map);
@@ -2219,6 +2316,7 @@ export class Game implements GameContext {
       return;
     }
     this.time += dt;
+    if (this.loadingProblem === 'pending' && !loaderShowing() && !this.transitioning) this.askLoadingProblem();
     // Interface motion steps first, even under a paused fight, so a page over it finishes opening.
     anim.step(dt);
     this.input.update(dt);

@@ -719,6 +719,12 @@ interface ConfirmOptions {
   onNo: () => void;
   /** Yes printed first, as a question put in a story reads ("[Yes] [No]"); the safe answer is still the one picked to start. */
   yesFirst?: boolean;
+  /**
+   * Yes picked to start, where it is the answer to take: Reload after loading problems (the owner, 15 Nov: "We should have
+   * reload as the default, instead of ignore"). It stays where it is printed, on the right as in the game's other questions
+   * ("I think the affirmative button should be on the right"); going back or tapping beside the card is still No.
+   */
+  yesPicked?: boolean;
   /** On touch the band rests on the safe answer; with `glove`, the glove too (the owner, 2026-11-12, for some questions). */
   glove?: boolean;
 }
@@ -745,13 +751,16 @@ export class ConfirmScreen implements Screen {
   /**
    * The page: a sheet rising from the foot of an upright phone, or a card elsewhere, with the question
    * over its two answers as printed buttons side by side, the safe one first (or Yes first, with `yesFirst`), the safe one
-   * picked to start.
+   * picked to start (or Yes, with `yesPicked`).
    */
   layout(): void {
     const g = this.game;
     const l = g.layout;
     const u = l.unit;
-    const idx = this.menu?.index ?? (this.opts.yesFirst ? 1 : 0);
+    const yesFirst = this.opts.yesFirst === true;
+    const yesAt = yesFirst ? 0 : 1;
+    const start = this.opts.yesPicked ? yesAt : 1 - yesAt;
+    const idx = this.menu?.index ?? start;
     for (const c of this.container.removeChildren()) c.destroy({ children: true });
     const sh = shade(l.panel.w, l.panel.h);
     sh.on('pointertap', () => this.opts.onNo());
@@ -761,9 +770,9 @@ export class ConfirmScreen implements Screen {
     const text = new Text({ text: this.opts.message, style: { fontFamily: FONT.body, fontSize: Math.round(u * 1.1), fill: INK, wordWrap: true, wordWrapWidth: room.w, lineHeight: Math.round(u * 1.45) } });
     const no = { label: this.opts.no, onChoose: () => this.opts.onNo() };
     const yes = { label: this.opts.yes, onChoose: () => this.opts.onYes() };
-    this.menu = new MenuList(this.opts.yesFirst ? [yes, no] : [no, yes], { bare: true, buttons: true });
+    this.menu = new MenuList(yesFirst ? [yes, no] : [no, yes], { bare: true, buttons: true });
     this.menu.index = idx;
-    this.menu.restOn(this.opts.yesFirst ? 1 : 0, { glove: this.opts.glove });
+    this.menu.restOn(start, { glove: this.opts.glove });
     withSounds(this.menu, (s) => g.audio.play(s));
     this.menu.onCancel = () => this.opts.onNo();
     const bottom = thumbReach(l);

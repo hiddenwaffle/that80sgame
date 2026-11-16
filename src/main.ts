@@ -1,5 +1,9 @@
 import { Application } from 'pixi.js';
-import { artForMap, artProgress, artReady, loadArt, whenArtReady } from './art/images.ts';
+// Pixi's browser pieces (input, accessibility, the DOM, filters), built into this script rather than fetched by Pixi on demand
+// as the renderer starts (see app.init's skipExtensionImports): one file fewer that can fail to arrive at startup (the owner,
+// 15 Nov: "it seems like adding the file makes sense").
+import 'pixi.js/browser';
+import { artFailed, artForMap, artProgress, artReady, artSources, loadArt, whenArtReady } from './art/images.ts';
 import { contentFiles } from './content/bundle.ts';
 import { loadContent } from './content/content.ts';
 import { devStartMap, devStartsInPlay, installDev, showContentErrors } from './dev/dev.ts';
@@ -14,6 +18,7 @@ import { density, drawDensity } from './render/density.ts';
 import { loadFonts } from './render/fonts.ts';
 import { motion } from './render/motion.ts';
 import { PAPER } from './render/palette.ts';
+import { releaseWatch } from './release_check.ts';
 import { closeNotice, hideLoader, loaderArtProgress, loaderBootProgress, loaderStill } from './ui/loader.ts';
 import { titleGlobeFields } from './ui/title_globe_load.ts';
 import { globeViewportMapWidth } from './ui/title_globe_sdf.ts';
@@ -21,6 +26,10 @@ import { globeViewportMapWidth } from './ui/title_globe_sdf.ts';
 async function boot() {
   // From the loading page on, a right click doesn't open the browser's menu.
   blockContextMenu(document);
+  // A newer release on the site (src/release_check.ts): a piece of code that does not arrive asks. Until the game is made,
+  // nothing is lost by reloading for it, so the page does at once (once).
+  window.addEventListener('vite:preloadError', () => void releaseWatch.missing());
+  releaseWatch.listen((sha) => { if (!releaseWatch.reloadedFor(sha)) releaseWatch.reload(sha); });
   // Battery saver as stored, until the game binds its own settings: the first frames and the globe's bake follow it too.
   const stored = loadSettings();
   density.bind(() => stored.batterySaver);
@@ -42,6 +51,8 @@ async function boot() {
     // WebGL only: as a single preference Pixi only put it first and fell back to WebGPU or Canvas, where the game's WebGL
     // shaders leave a title with no world map; as a one-item list it throws, and startup says so (Fable review F2).
     preference: ['webgl'],
+    // Imported above, so Pixi does not fetch them again.
+    skipExtensionImports: true,
     width: host.clientWidth || window.innerWidth,
     height: host.clientHeight || window.innerHeight,
   });
@@ -135,8 +146,10 @@ async function boot() {
   const devStarted = installDev(game);
   if (!devStarted) game.showTitle();
   hideLoader();
-  // Tools can interact once the initial chapter is ready; full-prefetch completion is separate.
-  const handle = { shown: true, get ready() { return titleGlobeFields.current !== null && (!titleShowing() || titleGlobeFields.status.phase !== 'failed') && artReady(artForMap(game.world?.map.id ?? initialMap)); }, get globe() { return { ...titleGlobeFields.status, bootWaitAt: globeWaitAt, bootWaitMs: globeWaitMs }; }, get allArtReady() { return artReady(); }, game };
+  // Tools can interact once the initial chapter is ready; full-prefetch completion is separate. `art` says, in a build too,
+  // which pictures are pink, the file each came from and each map's (tools/network_cut_checks.ts).
+  const art = { failed: artFailed, sources: artSources, forMap: artForMap };
+  const handle = { shown: true, get ready() { return titleGlobeFields.current !== null && (!titleShowing() || titleGlobeFields.status.phase !== 'failed') && artReady(artForMap(game.world?.map.id ?? initialMap)); }, get globe() { return { ...titleGlobeFields.status, bootWaitAt: globeWaitAt, bootWaitMs: globeWaitMs }; }, get allArtReady() { return artReady(); }, art, game };
   (window as unknown as { __game: unknown }).__game = handle;
   // Every line of the latest fight, for pasting (the log page keeps only the last few): type fightLog() in the browser's
   // console; copy(fightLog()) puts it on the clipboard. Always there, with or without the dev tools.
@@ -156,10 +169,13 @@ function showFailure(err: unknown): void {
     ? err.stack?.includes(err.message) ? err.stack : [String(err), err.stack].filter(Boolean).join('\n')
     : String(err);
   // Pixi throws this when WebGL is missing or turned off: the game's shaders need it (see app.init's preference).
+  const missing = /font did not load|Failed to fetch|NetworkError|Importing a module script failed|dynamically imported module/i.test(raw);
   const plain = /No available renderer/.test(raw) ? 'This game needs WebGL, which this browser does not have or has turned off.'
-    : /font did not load|Failed to fetch|NetworkError|Importing a module script failed|dynamically imported module/i.test(raw) ? 'Part of the game did not arrive. Check the connection, then reload.'
+    : missing ? 'Part of the game did not arrive. Check the connection, then reload.'
     : 'Something stopped the game from starting.';
   (window as unknown as { showStartupFailure(plain: string, detail: string): void }).showStartupFailure(plain, raw);
+  // A part that did not arrive may be one a newer release took away: then the page reloads for it (the listener above).
+  if (missing) void releaseWatch.missing();
 }
 
 boot().catch((err) => {

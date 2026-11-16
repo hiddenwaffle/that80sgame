@@ -5,6 +5,7 @@ import { PITCHES, allDraft, choiceFor, speakerOf, styleFor, type SoundChoice } f
 import { SFX_NAMES } from './synth/style_names.ts';
 import { SR } from './synth/dsp.ts';
 import type { GameJob, GameResult } from './synth/gameWorker.ts';
+import GameWorker from './synth/gameWorker.ts?worker&inline';
 
 /**
  * Tracks kept once rendered: a long loop is tens of megabytes, so only the last few asked for, with room beside them for
@@ -15,7 +16,7 @@ const KEEP_TRACKS = 6;
 /**
  * Effects too slow to hold up the start, rendered first of the renders ahead instead, after the track playing: Revival's
  * choir and sparkles ring for seconds in a big room, three quarters of all the effects' rendering on their own
- * (2026-10-16). Nothing plays them in the first seconds; until one is in, the first draft's plays.
+ * (2026-10-16). Nothing plays them in the first seconds; one asked for before it is in waits for it (audio.ts).
  */
 const LATER_SFX = new Set(['revival']);
 
@@ -23,14 +24,37 @@ const LATER_SFX = new Set(['revival']);
 const slow = (job: GameJob): boolean => job.kind === 'music' || LATER_SFX.has(job.name);
 
 /**
+ * How many times a main worker that fails to load or dies is made again, the new one taking its render and those waiting,
+ * before the sound is given up for this visit (the owner, 15 Nov: retry the synthesizer rather than play the first draft's,
+ * which "sound terrible"). A render that was under way in two workers that died is the cause, not the workers: it fails
+ * alone, and the rest go on.
+ */
+const RESTARTS = 3;
+
+/**
+ * What went wrong with the sound for good, for the mark the game shows and the reload it offers: the synthesizer did not
+ * arrive, its workers kept failing, a render failed twice, a render found no room on the page, or the browser refused sound.
+ */
+export type SoundProblem = 'load' | 'worker' | 'render' | 'memory' | 'refused';
+
+/**
+ * Failures made on purpose, in developer mode, for the checks (`?soundfail=`): every worker failing to start, the first
+ * render's worker dying, every render failing, or each render failing once.
+ */
+export type SoundFail = 'worker' | 'crash' | 'render' | 'render_once';
+
+/**
  * A render waiting for a worker, or under way in one; `track` is the music it is for, and `asked` the asking for it that
- * made it (`renderTrack`): a track let go (`trim`) and asked for again is asked anew.
+ * made it (`renderTrack`): a track let go (`trim`) and asked for again is asked anew. `deaths` counts the workers that died
+ * under it, and `retried` whether a worker that could not make it has been asked again.
  */
 interface Job {
   job: GameJob;
   track: string | null;
   asked: object | null;
   done: (r: GameResult) => void;
+  deaths: number;
+  retried: boolean;
 }
 
 /** A worker of the synthesizer's, and the render under way in it. */
@@ -50,7 +74,7 @@ export interface Piece {
 /**
  * The game's sound in a style (see synth/choice.ts). The synthesizer renders off the page's thread, every effect and
  * voice at once (the slowest effects once the track playing is in) and each track when it is first asked for; until a
- * sound is in, the first draft's plays. The renders wait here and go to the worker one at a time, so the track asked
+ * sound is in, nothing plays in its place. The renders wait here and go to the worker one at a time, so the track asked
  * for now goes ahead of them all. A render under way cannot be stopped short; if it is long and for something else, a
  * second worker renders the track beside it, and that one's render for music no longer asked for is stopped, to render
  * again later (2026-10-16; the owner, of the bridge's music waiting for Beijing's: "It would be cool if for any map
@@ -58,7 +82,8 @@ export interface Piece {
  * to no audio context, so they outlive one rebuilt after the phone sleeps.
  */
 export class StyledSound {
-  private readonly main: Renderer;
+  /** The worker renders go to first; made again when it fails (`lostMain`). */
+  private main: Renderer;
   /** The second worker, while it renders music asked for (it finishes a render begun before the music changed); null otherwise. */
   private helper: Renderer | null = null;
   private helperFailed = false;
@@ -84,20 +109,23 @@ export class StyledSound {
   private laterDone!: () => void;
   readonly choice: SoundChoice;
 
+  /** What has gone wrong with the sound for good, the first thing if more than one (see `SoundProblem`); null while all is well. */
+  problem: SoundProblem | null = null;
+  /** Told each time something goes wrong for good. */
+  onProblem: ((p: SoundProblem) => void) | null = null;
+  private readonly fail: SoundFail | null;
+  private restarts = 0;
+  private crashed = false;
+
   /** `voices`: the script's typing pitches, rendered with the effects, before any track, as `PITCHES` are. */
-  constructor(choice: SoundChoice, voices: readonly number[] = []) {
+  constructor(choice: SoundChoice, voices: readonly number[] = [], fail: SoundFail | null = null) {
     this.choice = choice;
-    // A worker that fails to load, or dies (out of memory on a phone during a long render), fails every render waiting
-    // or still to come, so the game falls back to the first draft's sound instead of waiting for ever.
-    this.main = this.spawn(() => {
-      this.broken = true;
-      const failed = [this.main.busy, ...this.queue.splice(0)];
-      this.main.busy = null;
-      for (const job of failed) job?.done({ id: 0, error: 'the sound worker failed' });
-    });
+    this.fail = fail;
+    // A worker that fails to load, or dies (out of memory on a phone during a long render), is made again (`lostMain`).
+    this.main = this.spawn((r) => this.lostMain(r));
     const effects = SFX_NAMES.filter((name) => !LATER_SFX.has(name)).map((name) => {
       const style = styleFor(choice, 'sfx', name);
-      return style && this.render({ style, kind: 'sfx', name }).then(([b]) => void this.effects.set(name, b!), (e: Error) => console.error(e.message));
+      return style && this.render({ style, kind: 'sfx', name }).then(([b]) => void this.effects.set(name, b!), (e: Error) => void (this.disposed || this.broken || console.error(e.message)));
     });
     this.ready = Promise.all([...effects, ...[...new Set([...PITCHES, ...voices])].map((p) => this.prepareVoice(p))]).then(() => undefined);
     this.laterSfx = SFX_NAMES.filter((name) => LATER_SFX.has(name) && styleFor(choice, 'sfx', name));
@@ -121,7 +149,14 @@ export class StyledSound {
   }
 
   private spawn(failed: (r: Renderer) => void): Renderer {
-    const r: Renderer = { worker: new Worker(new URL('./synth/gameWorker.ts', import.meta.url), { type: 'module' }), busy: null };
+    // The built site keeps the worker's code in this file and starts each worker from memory (Vite's `?worker&inline`), so a
+    // helper or a worker made again fetches nothing, and a release that replaced the site meanwhile cannot take it away (the
+    // owner, 15 Nov: "we embed the async code into the index.js and feed it to the worker as a blob when it needs it"). The dev
+    // server still serves it as a file of its own.
+    const worker = this.fail === 'worker'
+      ? new Worker(new URL('/no_such_sound_worker.js', location.href), { type: 'module' })
+      : new GameWorker({ name: 'sound_worker' });
+    const r: Renderer = { worker, busy: null };
     r.worker.onmessage = (e: MessageEvent<GameResult>) => {
       const job = r.busy;
       if (job?.job.id !== e.data.id) return;
@@ -145,8 +180,21 @@ export class StyledSound {
         job: { ...job, id: this.nextId++ },
         track: job.kind === 'music' ? job.name : null,
         asked,
+        deaths: 0,
+        retried: false,
         done: (r) => {
-          if ('error' in r) return reject(new Error(r.error));
+          if ('error' in r) {
+            // A render the worker could not make is asked for once more, in its place in the queue.
+            if (r.id !== 0 && !queued.retried && !this.disposed) {
+              queued.retried = true;
+              queued.job = { ...queued.job, id: this.nextId++ };
+              this.queue.splice(this.isCurrent(queued) ? this.leading() : this.queue.length, 0, queued);
+              return;
+            }
+            // Stopped with the style, or let go with its track: nothing wrong.
+            if (r.error !== 'stopped' && r.error !== 'let go') this.report(r.id === 0 ? 'worker' : 'render');
+            return reject(new Error(r.error));
+          }
           if (r.gain !== undefined) this.gains.set(`${job.style} ${job.name}`, r.gain);
           this.times.push({ what: `${job.style} ${job.kind} ${job.name}${job.until === undefined ? '' : ` (its first ${job.until} s)`}${job.intros ? ' (its intros)' : ''}`, ms: r.ms });
           try {
@@ -159,7 +207,8 @@ export class StyledSound {
               }),
             );
           } catch (e) {
-            // No room on the page for it (a phone short of memory): the first draft's plays instead.
+            // No room on the page for it (a phone short of memory): it fails, and the game says so.
+            this.report('memory');
             reject(e as Error);
           }
         },
@@ -184,7 +233,7 @@ export class StyledSound {
   /**
    * A render taken back from a worker: first if it is the track asked for now's, otherwise right after that's. One for a
    * track let go since is dropped, as `trim` drops those waiting; unless its track is asked for again now, when it is
-   * rendered still, so the music waiting for it is not left to the first draft's.
+   * rendered still, so the music waiting for it is not left silent.
    */
   private giveBack(job: Job): void {
     if (job.asked && this.asked.get(job.track!) !== job.asked && !this.isCurrent(job)) return job.done({ id: 0, error: 'let go' });
@@ -251,6 +300,50 @@ export class StyledSound {
     }
   }
 
+  /**
+   * The main worker failed to load or died. Up to `RESTARTS` times a new one takes over its render (unless that render was
+   * under way in a worker that died before, when it fails alone) and those waiting. After that, or once the browser will make
+   * no more, every render fails and the game is told, rather than waiting for ever.
+   */
+  private lostMain(r: Renderer): void {
+    if (this.main !== r || this.disposed || this.broken) return;
+    r.worker.terminate();
+    const job = r.busy;
+    r.busy = null;
+    if (job && ++job.deaths >= 2) job.done({ id: 0, error: 'the sound worker failed' });
+    else if (job) this.giveBack(job);
+    if (this.restarts < RESTARTS) {
+      this.restarts++;
+      try {
+        this.main = this.spawn((w) => this.lostMain(w));
+        this.pump();
+        return;
+      } catch {
+        // A browser that will make no more workers: given up below.
+      }
+    }
+    this.broken = true;
+    for (const j of this.queue.splice(0)) j.done({ id: 0, error: 'the sound worker failed' });
+    this.report('worker');
+  }
+
+  /** Something has gone wrong with the sound for good; the first thing is the one kept. Nothing is wrong once it is let go. */
+  private report(p: SoundProblem): void {
+    if (this.disposed) return;
+    this.problem ??= p;
+    this.onProblem?.(p);
+  }
+
+  /** Whether the address asks for the first draft's sound for this one (`?sound=draft`, or one kind of it), rather than a style's. */
+  chosenDraft(kind: 'sfx' | 'music', name: string): boolean {
+    return styleFor(this.choice, kind, name) === null;
+  }
+
+  /** Whether the address asks for the first draft's typing sound at this pitch. */
+  voiceDraft(pitch: number): boolean {
+    return styleFor(this.choice, 'voice', speakerOf(pitch)) === null;
+  }
+
   /** The second worker failed to load or died: its render goes back to the main worker, and no second one is made again. */
   private lostHelper(r: Renderer): void {
     this.helperFailed = true;
@@ -266,7 +359,11 @@ export class StyledSound {
 
   private send(r: Renderer, job: Job): void {
     r.busy = job;
-    r.worker.postMessage(job.job);
+    // The failures asked for on purpose (`SoundFail`): the first render's worker dies once; renders fail always, or first time.
+    const crash = this.fail === 'crash' && !this.crashed && r === this.main;
+    if (crash) this.crashed = true;
+    const fail = crash ? 'crash' : this.fail === 'render' || (this.fail === 'render_once' && !job.retried) ? 'render' : undefined;
+    r.worker.postMessage(fail ? { ...job.job, fail } : job.job);
   }
 
   private prepareVoice(pitch: number): Promise<void> | null {
@@ -276,16 +373,16 @@ export class StyledSound {
     if (!style) return null;
     return this.render({ style, kind: 'voice', name: speaker, pitch }).then(
       (takes) => void this.voices.set(pitch, takes),
-      (e: Error) => void (this.disposed || console.error(e.message)),
+      (e: Error) => void (this.disposed || this.broken || console.error(e.message)),
     );
   }
 
-  /** An effect in the style, or null to play the first draft's. */
+  /** An effect in the style, or null while it is not in (or is the first draft's, as the address asks). */
   sfx(name: string): AudioBuffer | null {
     return this.effects.get(name) ?? null;
   }
 
-  /** The next take of a voice in the style, or null to play the first draft's. */
+  /** The next take of a voice in the style, or null while it is not in (or is the first draft's, as the address asks). */
   voice(pitch: number): AudioBuffer | null {
     if (!this.voices.has(pitch)) void this.prepareVoice(pitch);
     const takes = this.voices.get(pitch);
@@ -378,7 +475,7 @@ export class StyledSound {
       this.aheadBusy = true;
       void this.render({ style: styleFor(this.choice, 'sfx', effect)!, kind: 'sfx', name: effect })
         // Stopped on purpose when this style is let go: not an error.
-        .then(([b]) => void this.effects.set(effect, b!), (e: Error) => void (this.disposed || console.error(e.message)))
+        .then(([b]) => void this.effects.set(effect, b!), (e: Error) => void (this.disposed || this.broken || console.error(e.message)))
         .finally(() => {
           this.aheadBusy = false;
           if (!this.laterSfx.length) this.laterDone();
@@ -416,7 +513,7 @@ export class StyledSound {
           list.push(piece);
           this.onPiece?.(name, piece);
           // Stopped with this style, or with the track let go (`trim`): not an error.
-        }, (e: Error) => void (this.disposed || this.pieces.get(name) !== list || console.error(e.message)));
+        }, (e: Error) => void (this.disposed || this.pieces.get(name) !== list || this.broken || console.error(e.message)));
       }
     }
     const p: Promise<AudioBuffer> = this.render({ style, kind: 'music', name }, asked).then(
@@ -429,7 +526,7 @@ export class StyledSound {
         return b!;
       },
       (e: unknown) => {
-        // No loop to hand over to: its pieces go too, so later visits play the first draft from the start.
+        // No loop to hand over to: its pieces go too, so a later visit does not start a piece that nothing follows.
         if (this.tracks.get(name) === p) this.pieces.delete(name);
         throw e;
       },
@@ -444,7 +541,7 @@ export class StyledSound {
         if (this.disposed || this.tracks.get(name) !== p) return;
         this.render({ style, kind: 'music', name, intros: true, gain: this.gains.get(`${style} ${name}`) }, asked).then(
           (pieces) => void (this.tracks.get(name) === p && this.introPieces.set(name, pieces)),
-          (e: Error) => void (this.disposed || this.tracks.get(name) !== p || console.error(e.message)),
+          (e: Error) => void (this.disposed || this.tracks.get(name) !== p || this.broken || console.error(e.message)),
         );
       }, () => undefined);
     }
@@ -471,8 +568,8 @@ export class StyledSound {
 }
 
 /** The sound in a style, with the address's `sound` value laid over it; null when every sound is the first draft's. */
-export function styledFor(style: string, asked: string | null, voices: readonly number[] = []): StyledSound | null {
+export function styledFor(style: string, asked: string | null, voices: readonly number[] = [], fail: SoundFail | null = null): StyledSound | null {
   const { choice, unknown } = choiceFor(style, asked);
   if (unknown.length) console.warn(`Sound: no style or kind is called ${unknown.join(', ')}`);
-  return allDraft(choice) ? null : new StyledSound(choice, voices);
+  return allDraft(choice) ? null : new StyledSound(choice, voices, fail);
 }

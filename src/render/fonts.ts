@@ -45,7 +45,11 @@ export async function loadFonts(): Promise<void> {
   await Promise.all(
     faces.map(async ([family, url, weight, style]) => {
       for (let attempt = 1; ; attempt++) {
-        const face = new FontFace(family, `url(${url})`, { weight, style: style ?? 'normal' });
+        // Tried again at an address of its own: WebKit keeps a font that dropped on its way as failed, through every Reload too,
+        // when the phone notice had preloaded it (index.html), and answers the same address so without asking again. The first
+        // try takes the plain address, the preload's, so nothing is fetched twice (tools/network_cut_checks.ts, 15 Nov).
+        const src = attempt === 1 ? url : `${url}${url.includes('?') ? '&' : '?'}again=${attempt}`;
+        const face = new FontFace(family, `url(${src})`, { weight, style: style ?? 'normal' });
         try {
           await face.load();
           document.fonts.add(face);

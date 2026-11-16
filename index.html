@@ -61,12 +61,12 @@
         reload.addEventListener('click', function () { location.reload(); });
         sheet.append(title, text, reload, more); page.append(sheet); document.body.append(page); reload.focus();
       };
-      // A script of the game's that does not arrive (the main one, or a chunk it preloads) used to leave the loader chomping at
-      // 0% for ever (Fable review F3, 2026-11-09). Its element fires an error, which does not bubble, so this listens on the way in.
+      // A script of the game's that does not arrive (the main one, or a chunk it imports, which its element reports) used to leave
+      // the loader chomping at 0% for ever (Fable review F3, 2026-11-09). Its element fires an error, which does not bubble, so this
+      // listens on the way in. The build preloads no chunks (vite.config.ts modulePreload).
       window.addEventListener('error', function (e) {
         var t = e.target;
-        var ours = t instanceof HTMLScriptElement || (t instanceof HTMLLinkElement && t.rel === 'modulepreload');
-        if (ours) window.showStartupFailure('Part of the game did not arrive. Check the connection, then reload.', 'Could not load ' + (t.src || t.href));
+        if (t instanceof HTMLScriptElement) window.showStartupFailure('Part of the game did not arrive. Check the connection, then reload.', 'Could not load ' + t.src);
       }, true);
     </script>
     <title>That '80s Game</title>

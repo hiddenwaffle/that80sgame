@@ -1,4 +1,5 @@
 import type { GlobeBakeProgress, GlobeMapWidth } from './title_globe_sdf.ts';
+import GlobeWorker from './title_globe_worker.ts?worker&inline';
 
 export type GlobeFieldInfo = Record<string, number | string | boolean>;
 export interface GlobeField { width: GlobeMapWidth; pixels: Uint8ClampedArray; info: GlobeFieldInfo }
@@ -56,7 +57,8 @@ export class GlobeFieldCache {
   private abort: AbortController | null = null;
   private pending: Promise<GlobeField> | null = null;
 
-  constructor(createWorker: WorkerFactory = () => new Worker(new URL('./title_globe_worker.ts', import.meta.url), { type: 'module' })) {
+  // Built into the main code and started from memory, so the sharper bake on a larger window fetches nothing (src/release_check.ts).
+  constructor(createWorker: WorkerFactory = () => new GlobeWorker({ name: 'title_globe_worker' })) {
     this.createWorker = createWorker;
   }
 

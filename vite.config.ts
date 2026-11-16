@@ -337,10 +337,34 @@ function buildStamp(): { sha: string; changed: boolean; time: string } {
   return { sha: git(['rev-parse', '--short', 'HEAD']) || 'unknown', changed: git(['status', '--porcelain', '--untracked-files=no']) !== '', time: new Date().toISOString() };
 }
 
+/**
+ * version.json at the top of the built site, and from the dev server: the build's commit and time, the stamp the page itself
+ * carries (`__BUILD__`). A page left open across a release reads it when a file it fetches late is missing, to learn whether
+ * a newer release took that file away (src/release_check.ts; the owner, 15 Nov: "Noticing a newer release would be better").
+ */
+function versionFile(stamp: { sha: string; time: string }): Plugin {
+  const json = JSON.stringify({ sha: stamp.sha, time: stamp.time });
+  return {
+    name: 'version-file',
+    configureServer(server) {
+      server.middlewares.use('/version.json', (_req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'no-store');
+        res.end(json);
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: json });
+    },
+  };
+}
+
+const stamp = buildStamp();
+
 export default defineConfig({
   base: './',
-  define: { __BUILD__: JSON.stringify(buildStamp()) },
-  plugins: [content.plugin, restartOnConfigChange(), globsFollowNewFiles(), artFiles(), kitArt(), webpInBackground(), thirdPartyLicenses()],
+  define: { __BUILD__: JSON.stringify(stamp) },
+  plugins: [content.plugin, restartOnConfigChange(), globsFollowNewFiles(), artFiles(), kitArt(), webpInBackground(), thirdPartyLicenses(), versionFile(stamp)],
   // The check tools give each server they start a dependency cache of its own (tools/harness.ts startServer), so
   // servers running side by side never rebuild a cache another one's pages are using; `npm run dev` keeps the default.
   cacheDir: process.env.THAT80SGAME_VITE_CACHE || undefined,
@@ -368,7 +392,14 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    chunkSizeWarningLimit: 2000,
+    // No <link rel=modulepreload> for the chunks the main script imports: WebKit (every iPhone browser) kept one that dropped as
+    // failed, and every Reload came back to the startup page without asking for it again, until the tab was closed; imported
+    // without the hint, it is asked for again (tools/network_cut_checks.ts, and a real dropped connection through a proxy). Found
+    // late, one round trip later: 0.3 s more to the title on the slow phone setting, which Pixi's browser pieces built into the
+    // main script win back (src/main.ts). The owner, 15 Nov, picked "Pixi in, preloading off".
+    modulePreload: false,
+    // The main script holds the title globe's worker as well (59 kB, src/ui/title_globe_load.ts).
+    chunkSizeWarningLimit: 2100,
     // Every picture ships as its own file. Vite's default wrote each one under 4 KB into the main script as text (32 of them, 110 kB,
     // which put the script over the warning above and compressed badly); over HTTP/2 small files cost little (card fable_release_gaps).
     assetsInlineLimit: 0,

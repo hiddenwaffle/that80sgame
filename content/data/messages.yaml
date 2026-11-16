@@ -296,6 +296,18 @@ system:
   stopped_title: Something went wrong
   stopped_text: The game stopped. Your progress up to the last autosave is kept; reload to carry on from there.
   stopped_reload: Reload
+  # The sound's mark (src/ui/soundMark.ts), tapped, whatever went wrong (AudioSystem's `problem`, in the console), and a
+  # reload to try again (the owner's words, 15 Nov).
+  sound_failed: Sound unavailable due to a device error. Reload to try again from your last autosave.
+  sound_reload: Reload
+  sound_not_now: Not now
+  # Pictures did not arrive, even tried again, so hot pink boxes stand in (a dropped connection, or a newer release that
+  # took them off the site): asked once a visit as the loading page goes, Reload picked to start (Game.askLoadingProblem).
+  # The owner, 15 Nov: "rename "Not now" to "Ignore", to emphasize that they're taking a risk", then: "Maybe the dialogue
+  # should just say "The game encountered loading problems. Some content glitches may occur." with the same buttons".
+  loading_problems: The game encountered loading problems. Some content glitches may occur.
+  loading_problems_reload: Reload
+  loading_problems_ignore: Ignore
   rested: The party rests. Health and Energy restored.
   # Under a power pellet's own notice: how many of the map's power pellets are found (the owner, 2026-10-22).
   power_pellets: "Power Pellets Found: {found} of {total}"

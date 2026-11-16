@@ -1,7 +1,7 @@
 import type { Settings } from '../game/settings.ts';
 import { TRACKS, lengthAt, stepInLoop, type Track } from './music.ts';
 import { INTROS, introFor, introLeadsIn, introPlan, introSteps, type Intro, type LastIntro } from './intros.ts';
-import type { Piece, StyledSound } from './styled.ts';
+import type { Piece, SoundFail, SoundProblem, StyledSound } from './styled.ts';
 import { REVIVAL_VOICES } from './revival.ts';
 import { GIFT_NOTES } from './gift.ts';
 import { BridgeMix } from './bridge_mix.ts';
@@ -22,10 +22,24 @@ const onFrame = (seconds: number, rate: number) => Math.floor(seconds * rate + 0
 const fromFrame = (time: number, rate: number) => Math.ceil(time * rate - 1e-6) / rate;
 
 /**
+ * Failures made on purpose for the checks, in developer mode only: styled.ts `SoundFail`, `import` (the synthesizer's file
+ * missing) and `refused` (the browser refusing sound).
+ */
+function soundFail(): string | null {
+  if (typeof location === 'undefined') return null;
+  const params = new URLSearchParams(location.search);
+  return import.meta.env?.DEV || params.has('dev') ? params.get('soundfail') : null;
+}
+const STYLED_FAILS: readonly string[] = ['worker', 'crash', 'render', 'render_once'] satisfies SoundFail[];
+
+/**
  * Synthesised sound: effects, typing blips, and music loops, with no sound files.
  * Each sound is rendered in the Console style (see synth/choice.ts and styled.ts)
- * off the page's thread; until it is in, or if it cannot be, the first draft's
- * sound below plays, made from oscillators as it goes. Audio tries to start on load; if the browser
+ * off the page's thread. Until it is in, nothing plays in its place: an effect waits for its render, a voice types
+ * silent, and music waits. If the sound cannot be made, it is tried again (styled.ts), and if that fails too the game is
+ * told (`problem`), shows a mark and offers a reload (the owner, 15 Nov: the first draft's sound below, which played instead,
+ * and its old arrangements "sound terrible ... completely unacceptable"). The first draft's, made from oscillators as it
+ * goes, plays only where the address asks for it (`?sound=draft`). Audio tries to start on load; if the browser
  * blocks autoplay, a tap or key press starts it instead. It also recovers after
  * the phone is locked or a call interrupts it.
  */
@@ -61,14 +75,21 @@ export class AudioSystem {
    * Effects asked for while the browser does not yet let sound out. The gesture that unlocks sound is often the one that
    * asks for them (New Game's Enter starts the dive and its riser), and the unlock lands a moment later, when the device
    * has opened. Each is started when the context's state turns to running (`flushHeld`), that far into itself, so the riser
-   * keeps step with the zoom; what has run out by then is dropped.
+   * keeps step with the zoom; what has run out by then is dropped. Effects asked for before their render is in wait here
+   * too, and start the same way once the style's effects are in.
    */
   private held: Array<{ name: string; rate: number; at: number }> = [];
   /** While a held effect starts late, the draft's notes due before this clock time are left out rather than piled up. */
   private skipBefore = 0;
   private checking = false;
-  /** The sound in the game's style, once its effects and voices are in; null plays the first draft's. */
+  /** The sound in the game's style, once its effects and voices are in; null before, if it could not be had, or with `draftOnly`. */
   private styled: StyledSound | null = null;
+  /** The address asks for the first draft's sound for everything (`?sound=draft`), so no style is loaded. */
+  private draftOnly = false;
+  /** What went wrong with the sound for good, if anything (styled.ts `SoundProblem`); the game shows a mark while it is set. */
+  problem: SoundProblem | null = null;
+  /** Told when `problem` is set, or cleared (a browser that refused sound has let it start after all). */
+  onProblem: ((p: SoundProblem | null) => void) | null = null;
   /** Counts style changes, so one that lands late does not replace a newer one. */
   private styling = 0;
   private styleLoaded = 0;
@@ -147,14 +168,23 @@ export class AudioSystem {
 
   private create(): void {
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
+    if (!Ctx || soundFail() === 'refused') {
+      console.warn(Ctx ? 'No sound: refused, as asked (soundfail=refused).' : 'No sound: this browser has no Web Audio.');
+      this.report('refused');
+      return;
+    }
     // At the synthesizer's rate, where every sound is rendered and checked: the game mixes exactly that, and the browser converts
     // only the finished mix for the speakers. At the device's own rate (48 kHz on the owner's Mac) Chromium and WebKit converted
     // each sound as it played, by straight lines between samples, dulling the treble and adding false tones (the owner, 2026-11-11,
     // after a listening page of both: "I see no downside"). A browser that will not open at that rate opens at its own, as before;
     // one that refuses a context (too many open, or sound turned off) leaves the game silent, not stopped.
     try { this.ctx = new Ctx({ sampleRate: SR }); } catch {
-      try { this.ctx = new Ctx(); } catch (e) { console.warn('No sound: the browser refused an audio context.', e); return; }
+      try { this.ctx = new Ctx(); } catch (e) { console.warn('No sound: the browser refused an audio context.', e); this.report('refused'); return; }
+    }
+    // Refused before, it has started now (each tap tries again): nothing is wrong any more.
+    if (this.problem === 'refused') {
+      this.problem = null;
+      this.onProblem?.(null);
     }
     this.ctx.addEventListener('statechange', () => this.flushHeld());
     this.draftMusicGains.clear();
@@ -306,12 +336,31 @@ export class AudioSystem {
   /** `rate` plays a style's effect faster and higher (2 is an octave up); the first draft's tones ignore it. */
   play(name: string, rate = 1): void {
     if (!this.ctx || this.ctx.state !== 'running') {
-      // Kept for the unlock (see `held`); a page left locked keeps only the latest few.
-      this.held.push({ name, rate, at: performance.now() / 1000 });
-      if (this.held.length > 32) this.held.shift();
+      // Kept for the unlock (see `held`).
+      this.hold(name, rate, performance.now() / 1000);
       return;
     }
     this.sound(name, rate, 0);
+  }
+
+  /** An effect kept to start later, as if it had started `at` (seconds on the page's clock); only the latest few are kept. */
+  private hold(name: string, rate: number, at: number): void {
+    this.held.push({ name, rate, at });
+    if (this.held.length > 32) this.held.shift();
+  }
+
+  /** Whether the address asks for the first draft's sound here (`?sound=draft`, or one kind of it): the only time it plays. */
+  private draftAsked(kind: 'sfx' | 'music', name: string): boolean {
+    return this.styled ? this.styled.chosenDraft(kind, name) : this.draftOnly;
+  }
+
+  /** Something has gone wrong with the sound for good: the first is kept, and the game told once. */
+  private report(p: SoundProblem): void {
+    if (this.problem) return;
+    this.problem = p;
+    this.held = [];
+    console.error(`The sound has failed (${p}); the game shows its mark and offers a reload.`);
+    this.onProblem?.(p);
   }
 
   /** The music turned down under an effect (`playOver`), and how to bring it back up from wherever it is. */
@@ -321,7 +370,7 @@ export class AudioSystem {
    * An effect played over the music turned down by `duck` decibels, the music back up through the effect's last `back`
    * seconds (Ronnienomics!'s failure sting). `stop` ends the effect at once and brings the music back up. Only the music's
    * gain moves, and only meanwhile, ending exactly where the settings put it; the music's own sound is untouched.
-   * Before the style's sound is in, the draft's effect plays over the music as it is.
+   * Before the style's sound is in, the effect waits for its render as any other does (`sound`), over the music as it is.
    */
   playOver(name: string, duck: number, back = 0.5): { stop: () => void } {
     const ctx = this.ctx;
@@ -365,8 +414,9 @@ export class AudioSystem {
     };
   }
 
-  /** An effect, `late` seconds after it was asked for: a rendered one from that far in, the draft's without its notes due
-   * before now. */
+  /** An effect, `late` seconds after it was asked for: a rendered one from that far in. One not in yet waits for its render
+   * with those held for the unlock (`held`), and starts that far in once it is (`flushHeld`); one that will never be, as the
+   * sound has failed (`problem`), is not played. The draft's, without its notes due before now, only where the address asks. */
   private sound(name: string, rate: number, late: number): void {
     const ctx = this.ctx!;
     const now = ctx.currentTime + 0.005;
@@ -374,6 +424,10 @@ export class AudioSystem {
     if (styled) {
       // Started late, a sound that has run out by now is left out; on time, every sound plays whatever its length.
       if (late <= 0 || late * rate < styled.duration - 0.05) this.buffer(styled, now, rate, late * rate);
+      return;
+    }
+    if (!this.draftAsked('sfx', name)) {
+      if (!this.problem) this.hold(name, rate, performance.now() / 1000 - late);
       return;
     }
     const t = now - late;
@@ -597,6 +651,8 @@ export class AudioSystem {
     const t = this.ctx.currentTime + 0.002;
     const styled = this.styled?.voice(pitch);
     if (styled) return this.buffer(styled, t);
+    // Not in yet, or never to be: the line types silent, unless the address asks for the first draft's blip.
+    if (!(this.styled ? this.styled.voiceDraft(pitch) : this.draftOnly)) return;
     this.tone('square', pitch * (0.95 + Math.random() * 0.1), pitch, t, 0.035, 0.07);
   }
 
@@ -651,9 +707,10 @@ export class AudioSystem {
     this.track = name ? (TRACKS[name] ?? null) : null;
     this.step = resumeStep;
     this.waitingForTitle = name === 'title';
-    // While the game's style is still loading (a quick Continue), a track waits for it as for its own loop.
-    const loading = this.styled === null && this.styleLoaded !== this.styling;
-    this.waitingForLoop = name !== null && name !== 'title' && this.track !== null && (loading || (this.styled?.pending(name) ?? false));
+    // While the game's style is still loading (a quick Continue), or could not be had at all, a track waits for it silent
+    // as for its own loop.
+    const unstyled = this.styled === null && !this.draftOnly;
+    this.waitingForLoop = name !== null && name !== 'title' && this.track !== null && (unstyled || (this.styled?.pending(name) ?? false));
     this.resuming = resume;
     if (this.scheduler !== null) {
       clearInterval(this.scheduler);
@@ -701,16 +758,24 @@ export class AudioSystem {
   async setStyle(style: string): Promise<boolean> {
     const n = ++this.styling;
     const asked = new URLSearchParams(location.search).get('sound');
+    const fail = soundFail();
     // The first draft's sound needs none of the synthesizer, so it is not even loaded. If the synthesizer cannot load,
-    // the first draft's sound plays rather than nothing.
+    // nothing plays, and the game is told (`problem`).
     let next: StyledSound | null = null;
+    let draftOnly = style === 'draft' && !asked;
+    let problem: SoundProblem | null = null;
     try {
-      if (style !== 'draft' || asked) {
-        const { styledFor } = await import('./styled.ts');
+      if (!draftOnly) {
+        problem = 'load';
+        const { styledFor } = await this.loadSynth(fail === 'import');
         // A newer style asked for while the synthesizer loaded wins, so this one starts no renders to throw away (the
         // constructor asks for Console, and a tool that then asks for the draft would otherwise render Console anyway).
         if (n !== this.styling) return false;
-        next = styledFor(style, asked, this.voicePitches);
+        problem = 'worker';
+        next = styledFor(style, asked, this.voicePitches, fail !== null && STYLED_FAILS.includes(fail) ? fail as SoundFail : null);
+        problem = null;
+        draftOnly = next === null;
+        if (next) next.onProblem = (p) => this.report(p);
         await next?.ready;
       }
     } catch (e) {
@@ -723,12 +788,41 @@ export class AudioSystem {
     }
     this.styled?.dispose();
     this.styled = next;
+    this.draftOnly = draftOnly;
     this.styleLoaded = n;
+    if (problem) this.report(problem);
+    else if (next?.problem) this.report(next.problem);
     const styled = next;
     if (styled) styled.onPiece = (name, piece) => this.pieceIn(name, piece, styled);
     if (this.trackName) this.followStyle(this.trackName);
     next?.prepare(this.ahead);
+    // Effects asked for meanwhile start now, that far into themselves; Revival's, rendered after the first track, once in.
+    this.flushHeld();
+    void next?.allEffects.then(() => { if (this.styled === next) this.flushHeld(); });
     return true;
+  }
+
+  /**
+   * The synthesizer's code, asked for three times, two and then five seconds apart: a file that did not arrive (a dropped
+   * connection) may on a second asking (the owner, 15 Nov: try the synthesizer again). One a newer release has taken off the
+   * site never will; the game's mark offers a reload then. `?soundfail=import` asks for a file that is not there.
+   */
+  private async loadSynth(missing: boolean): Promise<typeof import('./styled.ts')> {
+    let again: string | null = null;
+    for (let tries = 0; ; tries++) {
+      try {
+        if (missing) return await import(/* @vite-ignore */ `${location.origin}/no_such_synthesizer.js`);
+        return again ? await import(/* @vite-ignore */ again) as typeof import('./styled.ts') : await import('./styled.ts');
+      } catch (e) {
+        if (tries === 2) throw e;
+        // Chromium keeps a module that did not arrive as failed and answers its address so again without asking the site;
+        // WebKit and Firefox ask again (tools/network_cut_checks.ts, 15 Nov). The address its error names, with a query, is a
+        // new one to it, and reaches the same code; its own imports resolve as before. With no address named, the same.
+        const url = /https?:\/\/\S+?\.[jt]s\b/.exec(String(e))?.[0];
+        again = url ? `${url}?again=${tries + 1}` : null;
+        await new Promise((r) => window.setTimeout(r, tries ? 5000 : 2000));
+      }
+    }
   }
 
   /**
@@ -761,6 +855,9 @@ export class AudioSystem {
     const pending = this.styled?.track(name);
     if (!ctx || !this.track) return;
     if (!pending) {
+      // The first draft's notes only where the address asks for them. Otherwise the track waits silent: its style could
+      // not be had, and the game's mark says so (`problem`).
+      if (!this.draftAsked('music', name)) return;
       if (this.loop || this.waitingForTitle || this.waitingForLoop) this.takeOver(ctx, null);
       return;
     }
@@ -774,10 +871,8 @@ export class AudioSystem {
         if (this.loop?.piece) this.handOver(ctx, b, true);
         else this.takeOver(ctx, b);
       },
-      () => {
-        // A failed render still leaves a playable draft fallback for a track waiting on it.
-        if (this.trackName === name && this.ctx === ctx && this.styled === styled && (this.waitingForTitle || this.waitingForLoop)) this.takeOver(ctx, null);
-      },
+      // A render failed for good (styled.ts tried it again first): the track waits silent, and the game's mark says so.
+      () => undefined,
     );
   }
 
@@ -1023,7 +1118,8 @@ export class AudioSystem {
   /** The title's music is asked for but cannot start yet: its loop is still rendering, or there is no sound at all. Leaving
    * the map title waits meanwhile (game.ts, playUnderTitle), so New Game never starts the dive before the music it fades from. */
   get titleMusicWaiting(): boolean {
-    return this.trackName === 'title' && (this.waitingForTitle || !this.ctx);
+    // With the sound failed (`problem`), there is nothing to wait for.
+    return this.trackName === 'title' && !this.problem && (this.waitingForTitle || !this.ctx);
   }
 
   /** Fractional quarter-note position of the named song actually playing, or null while it is inaudible.

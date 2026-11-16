@@ -4,7 +4,7 @@ import { CONSOLE_TEMPOS } from './music_tempos.ts';
 import { PITCHES, allDraft, choiceFor, speakerOf, styleFor, type SoundChoice } from './synth/choice.ts';
 import { SFX_NAMES } from './synth/style_names.ts';
 import { SR } from './synth/dsp.ts';
-import type { GameJob, GameResult } from './synth/gameWorker.ts';
+import type { GameJob, GameResult, GameUp } from './synth/gameWorker.ts';
 import GameWorker from './synth/gameWorker.ts?worker&inline';
 
 /**
@@ -30,6 +30,9 @@ const slow = (job: GameJob): boolean => job.kind === 'music' || LATER_SFX.has(jo
  * alone, and the rest go on.
  */
 const RESTARTS = 3;
+
+/** How long a worker let go of before it has said it has started is given to say so before it is stopped anyway (`retire`). */
+const START_WAIT_MS = 10_000;
 
 /**
  * What went wrong with the sound for good, for the mark the game shows and the reload it offers: the synthesizer did not
@@ -57,10 +60,11 @@ interface Job {
   retried: boolean;
 }
 
-/** A worker of the synthesizer's, and the render under way in it. */
+/** A worker of the synthesizer's, the render under way in it, and whether it has said it has started (`GameUp`). */
 interface Renderer {
   worker: Worker;
   busy: Job | null;
+  up: boolean;
 }
 
 /** A piece of a long track's opening, which plays while its whole loop renders (openings.ts). */
@@ -141,8 +145,8 @@ export class StyledSound {
     this.laterSfx.length = 0;
     this.laterDone();
     const stopped = [this.main.busy, this.helper?.busy, ...this.queue.splice(0)];
-    this.main.worker.terminate();
-    this.helper?.worker.terminate();
+    this.retire(this.main);
+    if (this.helper) this.retire(this.helper);
     this.main.busy = null;
     this.helper = null;
     for (const job of stopped) job?.done({ id: 0, error: 'stopped' });
@@ -156,8 +160,10 @@ export class StyledSound {
     const worker = this.fail === 'worker'
       ? new Worker(new URL('/no_such_sound_worker.js', location.href), { type: 'module' })
       : new GameWorker({ name: 'sound_worker' });
-    const r: Renderer = { worker, busy: null };
-    r.worker.onmessage = (e: MessageEvent<GameResult>) => {
+    const r: Renderer = { worker, busy: null, up: false };
+    r.worker.onmessage = (e: MessageEvent<GameResult | GameUp>) => {
+      r.up = true;
+      if ('up' in e.data) return;
       const job = r.busy;
       if (job?.job.id !== e.data.id) return;
       r.busy = null;
@@ -169,6 +175,24 @@ export class StyledSound {
     };
     r.worker.onerror = () => failed(r);
     return r;
+  }
+
+  /**
+   * Stops a worker no longer needed, its render given back or settled already. One that has not yet said it has started
+   * is stopped only once it says so, or fails: Firefox's worker thread crashed, taking the page with it, when a worker was
+   * stopped a few milliseconds after it was made with a render sent (16 Nov, found by Fable: 4 crashes in 10 stops 5 to
+   * 7 ms after, none in 23 at other ages under 50 ms or in 356 of older workers). Until then nothing it sends back is taken.
+   */
+  private retire(r: Renderer): void {
+    if (r.up) return r.worker.terminate();
+    let wait: ReturnType<typeof setTimeout> | undefined;
+    const stop = () => {
+      clearTimeout(wait);
+      r.worker.terminate();
+    };
+    r.worker.onmessage = stop;
+    r.worker.onerror = stop;
+    wait = setTimeout(stop, START_WAIT_MS);
   }
 
   private render(job: Omit<GameJob, 'id'>, asked: object | null = null): Promise<AudioBuffer[]> {
@@ -278,7 +302,7 @@ export class StyledSound {
     const blocked = !this.broken && !this.helperFailed && this.forHelper(first) && busy !== null && this.holdsUp(busy, first);
     const old = this.helper;
     if (blocked && old?.busy && !this.isCurrent(old.busy)) {
-      old.worker.terminate();
+      this.retire(old);
       this.helper = null;
       this.giveBack(old.busy);
       old.busy = null;
@@ -295,7 +319,7 @@ export class StyledSound {
     if (blocked && this.helper) {
       if (!this.helper.busy) this.send(this.helper, this.queue.shift()!);
     } else if (this.helper && !this.helper.busy) {
-      this.helper.worker.terminate();
+      this.retire(this.helper);
       this.helper = null;
     }
   }

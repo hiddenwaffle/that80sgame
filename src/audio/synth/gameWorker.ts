@@ -25,6 +25,9 @@ export interface GameJob {
 /** `gain`: with a track's whole loop, the gain it was given, for the pieces it plays after a fight. */
 export type GameResult = { id: number; takes: Float32Array[][]; ms: number; gain?: number } | { id: number; error: string };
 
+/** Said once the worker has started, before any render (styled.ts `retire`). */
+export interface GameUp { up: true }
+
 const channels = (m: Mix): Float32Array[] => {
   for (let i = 0; i < m.length; i++) if (m.l[i] !== m.r[i]) return [m.l, m.r];
   return [m.l];
@@ -48,3 +51,5 @@ self.onmessage = (e: MessageEvent<GameJob>) => {
     (self as unknown as Worker).postMessage({ id: j.id, error: String(err) } satisfies GameResult);
   }
 };
+
+(self as unknown as Worker).postMessage({ up: true } satisfies GameUp);

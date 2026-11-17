@@ -66,22 +66,31 @@ export function patrolErrors(maps: ReadonlyMap<string, GameMap>): Array<{ file: 
 }
 
 /**
+ * The flags the game can set: by name (`names`), from a [flag x] in the script, an encounter's, item's or special's `flag`,
+ * a getaway quip or the game's own code (`flags.x =`); and `known` also takes its made-up names (entered:<map>,
+ * seen:<trigger>, field_entry_*).
+ */
+export function gameFlags(content: Content, sources: readonly string[]): { names: Set<string>; known: (flag: string) => boolean } {
+  const names = new Set<string>();
+  for (const scene of content.scenes.values()) for (const step of scene.steps)
+    if (step.kind === 'command' && step.name === 'flag' && step.args[1] !== 'off') names.add(step.args[0]!);
+  for (const record of [content.encounters, content.items, content.specials] as Array<Record<string, { flag?: string }>>)
+    for (const r of Object.values(record)) if (r.flag) names.add(r.flag);
+  for (const sp of Object.values(content.specials)) for (const quip of Object.values(sp.escape?.quips ?? {})) names.add(quip);
+  for (const text of sources) for (const m of text.matchAll(/flags(?:\.([A-Za-z_]\w*)|\[['"]([^'"$]+)['"]\])\s*=(?!=)/g)) names.add(m[1] ?? m[2]!);
+  const known = (flag: string) => names.has(flag) || /^seen:/.test(flag) || /^field_entry_(movable|first)_\d+$/.test(flag) ||
+    (flag.startsWith('entered:') && content.maps.has(flag.slice(8))) || flag.startsWith('taken:');
+  return { names, known };
+}
+
+/**
  * Every flag a `requires`, `appears`, `gone_when`, a headline, a chapter or a `[run scene requires]` names must be one the
- * game can set: by a [flag x] in the script, an encounter's, item's or special's `flag`, a getaway quip, the game's own
- * code (`flags.x =`), or one of its made-up names (entered:<map>, seen:<trigger>, field_entry_*). A misspelt one is false
- * for ever, so whatever waits for it never appears (Fable review C1, 2026-11-09).
+ * game can set (gameFlags). A misspelt one is false for ever, so whatever waits for it never appears (Fable review C1,
+ * 2026-11-09).
  */
 export function flagErrors(content: Content, sources: readonly string[]): Array<{ file: string; line: number; message: string }> {
   const errors: Array<{ file: string; line: number; message: string }> = [];
-  const set = new Set<string>();
-  for (const scene of content.scenes.values()) for (const step of scene.steps)
-    if (step.kind === 'command' && step.name === 'flag' && step.args[1] !== 'off') set.add(step.args[0]!);
-  for (const record of [content.encounters, content.items, content.specials] as Array<Record<string, { flag?: string }>>)
-    for (const r of Object.values(record)) if (r.flag) set.add(r.flag);
-  for (const sp of Object.values(content.specials)) for (const quip of Object.values(sp.escape?.quips ?? {})) set.add(quip);
-  for (const text of sources) for (const m of text.matchAll(/flags(?:\.([A-Za-z_]\w*)|\[['"]([^'"$]+)['"]\])\s*=(?!=)/g)) set.add(m[1] ?? m[2]!);
-  const known = (flag: string) => set.has(flag) || /^seen:/.test(flag) || /^field_entry_(movable|first)_\d+$/.test(flag) ||
-    (flag.startsWith('entered:') && content.maps.has(flag.slice(8))) || flag.startsWith('taken:');
+  const { known } = gameFlags(content, sources);
   const check = (requires: unknown, file: string, line: number, what: string) => {
     for (const part of String(requires ?? '').split(',')) {
       const flag = part.trim().replace(/^!/, '');

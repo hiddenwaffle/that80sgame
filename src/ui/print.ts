@@ -553,7 +553,9 @@ export function replayIcon(s: number, color = INK): Container {
   // The tail just above the right, the head just short of the top: the gap between them stays open at any size.
   const from = -0.35;
   const to = Math.PI * 1.5 - 0.17;
-  g.moveTo(c + Math.cos(from) * r, c + Math.sin(from) * r).arc(c, c, r, from, to).stroke({ width: k, color: 0xffffff, cap: 'butt' });
+  // The arc starts its own line: a moveTo to its first point gave that point twice, which builds vertices that are not
+  // numbers, drawn by some Android GPUs as a line to the middle of the screen (the owner, 17 Nov, at the end of the credits).
+  g.arc(c, c, r, from, to).stroke({ width: k, color: 0xffffff, cap: 'butt' });
   // The head, wider than the line, pointing the way the arrow turns.
   const tx = -Math.sin(to);
   const ty = Math.cos(to);

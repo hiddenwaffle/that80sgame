@@ -1745,18 +1745,29 @@ export class World {
     return warnings;
   }
 
+  /** Following everyone, how far across and down the camera may still stand from where it keeps them (keepPartyInView). */
+  private viewSlack: [number, number] | null = null;
+
   /**
    * Following everyone, the camera, still easing to their middle, moves no less than it must to keep each of them whole in
-   * view where they fit (on the smallest phone it cut off Olli's edge as he walked on at the maze's flower, 14 Nov).
+   * view where they fit (on the smallest phone it cut off Olli's edge as he walked on at the maze's flower, 14 Nov), inside
+   * the map's walking limits. Starting outside that, as after a fight framed past the maze's edge, it eases in as after any
+   * fight and only never goes farther out than it has been (the owner, 17 Nov: after the giant ghost, "the camera suddenly
+   * snaps back from where it was centered on the battle").
    */
   private keepPartyInView(): void {
     const shown = this.party.filter((a) => !a.hidden);
     const halfW = this.viewW / 2 / this.zoom, halfH = this.viewH / 2 / (this.zoom * this.ground);
+    let x = this.camX, y = this.camY;
     const left = Math.min(...shown.map((a) => a.x - a.size)), right = Math.max(...shown.map((a) => a.x + a.size));
-    if (right - left <= 2 * halfW) this.camX = Math.min(left + halfW, Math.max(right - halfW, this.camX));
+    if (right - left <= 2 * halfW) x = Math.min(left + halfW, Math.max(right - halfW, x));
     const top = Math.min(...shown.map((a) => a.y - 2 * a.size / this.ground)), bottom = Math.max(...shown.map((a) => a.y));
-    if (bottom - top <= 2 * halfH) this.camY = Math.min(top + halfH, Math.max(bottom - halfH, this.camY));
-    this.confineCamera();
+    if (bottom - top <= 2 * halfH) y = Math.min(top + halfH, Math.max(bottom - halfH, y));
+    [x, y] = this.clampCamera(x, y);
+    const [sx, sy] = this.viewSlack ?? [Infinity, Infinity];
+    this.camX = x + Math.max(-sx, Math.min(sx, this.camX - x));
+    this.camY = y + Math.max(-sy, Math.min(sy, this.camY - y));
+    this.viewSlack = [Math.abs(this.camX - x), Math.abs(this.camY - y)];
   }
 
   /** A fight's change of zoom must not expose an edge while the camera eases to its new goal. */
@@ -1892,6 +1903,7 @@ export class World {
       if (progress === 1) this.streetScroll = null;
     } else this.camY += (gy - this.camY) * k;
     if (this.cameraTarget === this.everyone) this.keepPartyInView();
+    else this.viewSlack = null;
     // The shake's offset is chosen here, with the world's own time, so a world held still (under the pause page
     // over a fight) holds one offset rather than jittering on each frame drawn.
     if (this.shakeTime > 0) {

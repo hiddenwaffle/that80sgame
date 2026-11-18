@@ -597,7 +597,6 @@ export class BattleUi {
     return this.tier.geo.band;
   }
 
-  /** Each member's card, for the browser checks. */
   /** Where the status row begins, in the panel's pixels: the ground below it is hidden. */
   get statusTop(): number {
     return Math.min(...this.statusRows.map(r => r.y));
@@ -620,6 +619,7 @@ export class BattleUi {
     return this.tier.texts;
   }
 
+  /** What a card shows apart from colour, for the browser checks. */
   rowMarks(i: number) {
     return this.tier.marks(i);
   }
@@ -1411,11 +1411,6 @@ export class BattleUi {
   private readonly dizzy = new Map<Actor, Graphics>();
   private dizzyTurn = 0;
 
-  /** How many members show dizzy stars, for the checks. */
-  get dizzyShown(): number {
-    return this.dizzy.size;
-  }
-
   /**
    * Three small yellow stars circle over the head of each member who is down, turning as they go; they
    * stand still with Reduce motion, and under a pause, since only the fight's own updates move them.
@@ -1586,7 +1581,7 @@ export class BattleUi {
   roundsFired = 0;
 
   /**
-   * The look's `rifle`: a burst from the rifle stuck on the Warsaw Pac (its art, `look/rifle/looks/boss_side`).
+   * A burst from the rifle stuck on the Warsaw Pac (its art, `looks/boss_side`).
    * Each round is a tracer from the muzzle; one that misses kicks up grass and earth on the ground beside a member and
    * glances off as a spark, one that hits (`hit`, the countdown's end) lands on the member with an impact. Rounds go
    * every 70 ms; resolves when the last has landed. With Reduce motion there are no tracers or flying earth, only a

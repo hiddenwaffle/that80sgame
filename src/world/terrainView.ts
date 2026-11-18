@@ -2,14 +2,12 @@ import { Container, Graphics, type StrokeStyle } from 'pixi.js';
 import { SceneryMaterials } from '../art/map_scenery.ts';
 import { TERRAINS, TILE } from '../content/terrain.ts';
 import type { GameMap } from '../content/tiled.ts';
-import { LOOK } from '../render/look.ts';
 import { motion } from '../render/motion.ts';
 import * as C from '../render/palette.ts';
 import { burstPoints } from '../ui/print.ts';
 import { drawStreets, streetTile } from './streets.ts';
 import { beijingFrame, type BeijingFrame } from './beijing_streets.ts';
 import { drawCameraScenery } from './camera_scenery.ts';
-import { KitView } from './kit_view.ts';
 
 /** Ground whose corners the less blocky ground (the look's `edges`) rounds, where one kind meets another. */
 const ROUNDED = ['grass', 'grass_dark', 'water', 'sand', 'path', 'gravel', 'rock'];
@@ -36,8 +34,7 @@ const STONE = 0xb7b1a3;
  * Draws a map's terrain as vector shapes. Arcade terrain goes into `arcade`,
  * which stays crisp; printed terrain goes into `print`, which sits under the
  * halftone filter. Pellets are drawn separately so eating one only redraws them.
- * The look's parts (`LOOK`; these are on unless the address has `look=old`) add to it:
- * the arcade's neon, rounded ground, moving water, and the arcade's grid fading into the grass.
+ * Over that go the arcade's neon, rounded ground, moving water, and the arcade's grid fading into the grass.
  */
 export class TerrainView {
   readonly arcade = new Container();
@@ -69,31 +66,20 @@ export class TerrainView {
   private readonly streets: string | null;
   /** Beijing's layout as its street plan finds it on the map (src/world/beijing_streets.ts); null for any other map. */
   private readonly city: BeijingFrame | null;
-  /** The map drawn from a Tiled kit composition (`kit_art`), in place of the code terrain and streets; null without one. */
-  readonly kit: KitView | null;
 
   constructor(map: GameMap) {
     this.map = map;
     this.materials = new SceneryMaterials(map.id);
-    this.streets = LOOK.has('city') && typeof map.props.streets === 'string' ? map.props.streets : null;
+    this.streets = typeof map.props.streets === 'string' ? map.props.streets : null;
     this.city = this.streets === 'beijing' ? beijingFrame(map) : null;
     const a = new Graphics();
     const p = new Graphics();
     this.bloom.blendMode = 'add';
     this.pelletGlow.blendMode = 'add';
-    // The look's layers only when its parts are on: even empty, a layer counts in its parent's bounds, and the print
-    // screen's dots are laid from the printed layer's bounds, so an empty one would shift them.
-    this.arcade.addChild(a, ...(LOOK.has('neon') ? [this.bloom, this.pelletGlow] : []), this.pellets);
+    this.arcade.addChild(a, this.bloom, this.pelletGlow, this.pellets);
     drawCameraScenery(this.print, map);
-    this.print.addChild(p, ...(LOOK.has('water') ? [this.ripples] : []), ...(this.materials.quay ? [this.quay] : []));
-    this.kit = KitView.for(map);
+    this.print.addChild(p, this.ripples, ...(this.materials.quay ? [this.quay] : []));
     this.drawArcade(a);
-    if (this.kit) {
-      // The composition is the map's look: its ground goes in under the figures, and its upright pieces sort with them (world.ts).
-      this.print.addChild(this.kit.ground);
-      this.update(0);
-      return;
-    }
     this.drawPrint(p);
     if (this.materials.quay) this.drawQuay(this.quay);
     // Street paint follows the map's named destinations when the alley tiers are resized, and the whole city when it moves.
@@ -106,11 +92,10 @@ export class TerrainView {
    * which is smooth enough for slow motion; still with Reduce motion, and then the ripples are drawn again only when the view changes.
    */
   update(t: number, view?: readonly [number, number, number, number]): void {
-    if (!LOOK.has('neon') && !LOOK.has('water')) return;
     if (this.tick++ % 3 && t > 0) return;
     const at = motion.reduced ? 0 : t;
-    if (LOOK.has('neon')) this.bloom.alpha = 0.8 + 0.2 * Math.sin(at * 1.6);
-    if (LOOK.has('water')) this.drawRipples(at, view);
+    this.bloom.alpha = 0.8 + 0.2 * Math.sin(at * 1.6);
+    this.drawRipples(at, view);
   }
 
   /**
@@ -204,28 +189,24 @@ export class TerrainView {
         g.rect(x * TILE, y * TILE, TILE, TILE).fill(color);
       }
     }
-    const neon = LOOK.has('neon');
     // Neon: a faint grid on the floor, as on a Tron board: each tile's top and left edges, and the far
     // edges where the floor ends.
-    if (neon) {
-      for (const [floor, color] of [['arcade_floor', 0x1c2d78], ['house_floor', 0x4a1d47]] as const) {
-        let any = false;
-        for (let y = 0; y < m.height; y++) {
-          for (let x = 0; x < m.width; x++) {
-            if (this.tid(x, y) !== floor) continue;
-            const X = x * TILE;
-            const Y = y * TILE;
-            g.moveTo(X, Y).lineTo(X + TILE, Y).moveTo(X, Y).lineTo(X, Y + TILE);
-            if (this.tid(x + 1, y) !== floor) g.moveTo(X + TILE, Y).lineTo(X + TILE, Y + TILE);
-            if (this.tid(x, y + 1) !== floor) g.moveTo(X, Y + TILE).lineTo(X + TILE, Y + TILE);
-            any = true;
-          }
+    for (const [floor, color] of [['arcade_floor', 0x1c2d78], ['house_floor', 0x4a1d47]] as const) {
+      let any = false;
+      for (let y = 0; y < m.height; y++) {
+        for (let x = 0; x < m.width; x++) {
+          if (this.tid(x, y) !== floor) continue;
+          const X = x * TILE;
+          const Y = y * TILE;
+          g.moveTo(X, Y).lineTo(X + TILE, Y).moveTo(X, Y).lineTo(X, Y + TILE);
+          if (this.tid(x + 1, y) !== floor) g.moveTo(X + TILE, Y).lineTo(X + TILE, Y + TILE);
+          if (this.tid(x, y + 1) !== floor) g.moveTo(X, Y + TILE).lineTo(X + TILE, Y + TILE);
+          any = true;
         }
-        if (any) g.stroke({ width: 1, color, alpha: 0.55 });
       }
+      if (any) g.stroke({ width: 1, color, alpha: 0.55 });
     }
-    // Neon outlines where walls meet floor, with a soft glow under them; with neon, a bloom of light round
-    // them and a pale core along them too.
+    // Neon outlines where walls meet floor, with a soft glow under them, a bloom of light round them and a pale core along them.
     for (const [wall, color, glow] of [
       ['arcade_wall', C.ARCADE_WALL, C.ARCADE_WALL_GLOW],
       ['house_wall', 0xff4fa3, 0x7a1f52],
@@ -246,14 +227,12 @@ export class TerrainView {
         }
         to.stroke({ width, color: c, alpha, cap: 'round', join: 'round' });
       };
-      if (neon) {
-        draw(this.bloom, 26, color, 0.07);
-        draw(this.bloom, 16, color, 0.12);
-        draw(this.bloom, 9, color, 0.22);
-      }
+      draw(this.bloom, 26, color, 0.07);
+      draw(this.bloom, 16, color, 0.12);
+      draw(this.bloom, 9, color, 0.22);
       draw(g, 9, glow, 0.55);
       draw(g, 3, color, 1);
-      if (neon) draw(g, 1.2, 0xdfe6ff, 0.85);
+      draw(g, 1.2, 0xdfe6ff, 0.85);
     }
   }
 
@@ -340,11 +319,7 @@ export class TerrainView {
       case 'water':
         this.fillTile(g, x, y, C.WATER);
         // The moving water draws its own ripples, which move, on the map (past its edge, under ground_past, it has none).
-        if (LOOK.has('water')) { if (this.onMap(x, y)) this.water.push([x, y]); }
-        else if (rnd(x, y, 1) < 0.45) {
-          const wy = Y + 8 + rnd(x, y, 2) * 16;
-          g.moveTo(X + 6, wy).quadraticCurveTo(X + 11, wy - 3, X + 16, wy).quadraticCurveTo(X + 21, wy + 3, X + 26, wy).stroke({ width: 1.3, color: 0xdff3ff });
-        }
+        if (this.onMap(x, y)) this.water.push([x, y]);
         break;
       case 'sand':
         this.fillTile(g, x, y, C.SAND);
@@ -562,7 +537,6 @@ export class TerrainView {
 
   /** For a rounded corner (`roundedCorner`), the ground showing round it: its kind, and the tile it is taken from. */
   private cornerGround(x: number, y: number, dx: number, dy: number): { id: string; x: number; y: number } | null {
-    if (!LOOK.has('edges')) return null;
     const a = this.tid(x, y);
     const around = [this.tid(x + dx, y), this.tid(x, y + dy), this.tid(x + dx, y + dy)] as const;
     if (!ROUNDED.includes(a) || around.some((t) => t === a || !ROUNDED.includes(t))) return null;
@@ -577,11 +551,9 @@ export class TerrainView {
     return id === 'rock' ? this.rockGround(x, y) : this.plainColor(id);
   }
 
-  /** The ground under a rock's boulder: what is beside it, or with the less blocky ground, stone where it stands in water. */
+  /** The ground under a rock's boulder: stone where it stands in water, else what is beside it. */
   private rockGround(x: number, y: number): number {
-    if (LOOK.has('edges')) {
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (this.tid(x + dx, y + dy) === 'water') return STONE;
-    }
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (this.tid(x + dx, y + dy) === 'water') return STONE;
     return this.neighbourGround(x, y);
   }
 
@@ -621,14 +593,6 @@ export class TerrainView {
    */
   private outline(g: Graphics, id: string, where: (x: number, y: number) => boolean, beyond = 0, stroke: StrokeStyle = { width: 2, color: C.INK, cap: 'round' }, except?: string): void {
     const m = this.map;
-    if (!LOOK.has('edges')) {
-      const segs = this.edges((x, y) => where(x, y) && this.tid(x, y) === id, (x, y) => this.tid(x, y) !== id && this.tid(x, y) !== 'void', beyond);
-      // Stroking with no path would outline the last shape drawn, so only stroke real segments.
-      if (!segs.length) return;
-      for (const [x0, y0, x1, y1] of segs) g.moveTo(x0, y0).lineTo(x1, y1);
-      g.stroke(stroke);
-      return;
-    }
     const arcs = new Set<string>();
     let any = false;
     for (let y = -beyond; y < m.height + beyond; y++) {
@@ -729,11 +693,11 @@ export class TerrainView {
       }
     }
     this.drawGroundPast(g);
-    if (LOOK.has('blend')) this.drawBlend(g);
+    this.drawBlend(g);
     this.drawRoads(g);
     // Ink lines along shores, wall bases, and where the printed world meets the arcade.
     if (this.materials.bank) this.outline(g, 'water', () => true, 0, this.materials.bank, this.materials.bankExcept);
-    if (!this.materials.quay && !this.streets && LOOK.has('edges')) this.drawBankFaces(g);
+    if (!this.materials.quay && !this.streets) this.drawBankFaces(g);
     this.outline(g, 'water', () => true);
     this.drawDeckEnds(g);
     if (!this.materials.quay) this.drawDeckDepth(g);
@@ -1037,12 +1001,10 @@ export class TerrainView {
     for (const [x, y] of at) g.rect(x - 2, y - 2, 4, 4);
     if (at.length) g.fill(C.ARCADE_DOT);
     // Neon: each pellet glows.
-    if (LOOK.has('neon')) {
-      const h = this.pelletGlow;
-      h.clear();
-      for (const [x, y] of at) h.circle(x, y, 7);
-      if (at.length) h.fill({ color: C.ARCADE_DOT, alpha: 0.2 });
-    }
+    const h = this.pelletGlow;
+    h.clear();
+    for (const [x, y] of at) h.circle(x, y, 7);
+    if (at.length) h.fill({ color: C.ARCADE_DOT, alpha: 0.2 });
   }
 }
 

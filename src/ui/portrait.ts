@@ -1,7 +1,6 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { LOOKS, type LookId } from '../art/characters.ts';
 import { drawLookArt } from '../art/lookArt.ts';
-import { LOOK } from '../render/look.ts';
 import { BOX, INK } from '../render/palette.ts';
 import { measures } from './print.ts';
 
@@ -52,7 +51,7 @@ export function portrait(look: string, size: number, u: number, ko: boolean, opt
   // The look's `portraits`: a close-up of the member facing right, from the side, their eyes in the middle of
   // the frame and their colours filling it (the owner: "a zoom in on them facing right").
   const r = size * 0.72;
-  if (info && !opts.whole && LOOK.has('portraits') && drawLookArt(figure, look as LookId, { facing: 'right', mouth: 0, t: 0, ko, hurt: false }, r)) {
+  if (info && !opts.whole && drawLookArt(figure, look as LookId, { facing: 'right', mouth: 0, t: 0, ko, hurt: false }, r)) {
     const inset = m.l;
     const mask = new Graphics().rect(inset, inset, size - inset * 2, size - inset * 2).fill(0xffffff);
     figure.mask = mask;

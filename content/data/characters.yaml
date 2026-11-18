@@ -58,10 +58,6 @@ Tank:
 Pro-Democracy Student:
   actor: student_lower
   voice: 480
-Student Shopkeeper:
-  actor: student_upper
-  voice: 520
-  label: Pro-Democracy Student
 South Street Student:
   actor: south_student
   voice: 480

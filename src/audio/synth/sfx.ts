@@ -28,20 +28,6 @@ class Kit {
     this.voices.push({ ...this.base, ...v } as Voice);
     return this;
   }
-  /**
-   * Paper: many tiny grains of filtered noise, each at its own pitch, thickest mid-way, over a soft swish of the
-   * sheet sliding; the grains are what make it read as paper rather than a drum.
-   */
-  crinkle(at: number, dur: number, count: number, gain: number, seed: number, more: Partial<Voice> = {}): this {
-    const r = rng(seed);
-    for (let i = 0; i < count; i++) {
-      const x = r();
-      const hold = 0.002 + r() * 0.009;
-      this.add({ wave: 'noise', at: at + dur * x, freq: SR, hold, gain: gain * (0.35 + r() * 0.65) * Math.sqrt(Math.sin(Math.PI * x)), a: 0.001, d: hold, s: 0, r: 0.004, bp: 1600 + r() * 5000, q: 1.2 + r() * 3, pan: (r() - 0.5) * 0.7, seed: seed * 100 + i, ...more });
-    }
-    this.add({ wave: 'noise', at, freq: SR, hold: dur, gain: gain * 0.22, a: dur * 0.35, d: dur * 0.65, s: 0, bp: 2600, bpTo: 1200, q: 0.7, seed: seed * 100 + count, ...more });
-    return this;
-  }
   /** Notes one after another, `step` apart, each made by `make`. */
   seq(notes: Array<string | number>, at: number, step: number, make: (note: number, at: number, i: number) => void): this {
     notes.forEach((x, i) => make(n(x), at + i * step, i));

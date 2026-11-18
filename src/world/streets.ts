@@ -5,9 +5,9 @@ import { beijingStreetBands, beijingStreetCentres, type BeijingFrame } from './b
 import { WALL_INSET } from './tall_plan.ts';
 
 /**
- * Beijing's street plan, painted over its tiles when the map names it (its `streets` property) and the look's `city` is on: roads,
+ * Beijing's street plan, painted over its tiles when the map names it (its `streets` property): roads,
  * curbs and sidewalks laid where they belong rather than tile by tile. Only Beijing has one: Berlin's code-drawn plan went on 2026-11-11,
- * as no map named it (Berlin is drawn from its Tiled kit). Everything is laid from the map (`city`, src/world/beijing_streets.ts), so a
+ * as no map named it. Everything is laid from the map (`city`, src/world/beijing_streets.ts), so a
  * move in Tiled moves the paint with it.
  */
 export function drawStreets(parent: Container, map: GameMap, city: BeijingFrame): void {

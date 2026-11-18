@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { addressStore, storageRefused } from '../address_store.ts';
 import type { Dir } from '../art/geom.ts';
 import type { Content } from '../content/content.ts';
@@ -230,26 +230,29 @@ export function keepUnreadableSave(c: Content): void {
 export type SaveError = 'incomplete' | 'unknown_map' | 'unknown_member' | 'empty' | 'not_a_code' | 'damaged' | 'unreadable';
 export type SaveCheck = { state: GameState } | { error: SaveError };
 
+// zod's small edition, of which a build keeps only what is used here: the full one put 92 kB of minified script in the game
+// for this one check (18 Nov). The checks are the same ones, in the same order.
 const dir = z.enum(['up', 'down', 'left', 'right']);
 // Generous limits, but finite: a level in the billions would make the XP table loop for ever.
 const BIG = 1e7;
-const count = z.number().int().min(0).max(BIG);
-const stat = z.number().min(-BIG).max(BIG);
+const between = (min: number, max: number) => z.number().check(z.minimum(min), z.maximum(max));
+const count = z.number().check(z.int(), z.minimum(0), z.maximum(BIG));
+const stat = between(-BIG, BIG);
 const memberSchema = z.object({
   id: z.string(),
-  level: z.number().int().min(1).max(99),
-  xp: z.number().min(0).max(BIG),
-  hp: z.number().min(0).max(BIG),
-  mp: z.number().min(0).max(BIG),
-  maxHp: z.number().positive().max(BIG),
-  maxMp: z.number().min(0).max(BIG),
+  level: z.number().check(z.int(), z.minimum(1), z.maximum(99)),
+  xp: between(0, BIG),
+  hp: between(0, BIG),
+  mp: between(0, BIG),
+  maxHp: z.number().check(z.positive(), z.maximum(BIG)),
+  maxMp: between(0, BIG),
   strength: stat,
   accuracy: stat,
   speed: stat,
 });
 const stateSchema = z.object({
   version: z.literal(1),
-  order: z.array(z.string()).min(1),
+  order: z.array(z.string()).check(z.minLength(1)),
   members: z.record(z.string(), memberSchema),
   dots: count,
   items: z.record(z.string(), count),
@@ -262,13 +265,13 @@ const stateSchema = z.object({
   beaten: z.array(z.string()),
   revealed: z.array(z.string()),
   temp: z.record(z.string(), z.object({
-    defeated: z.array(z.string()), pellets: z.array(count), left: z.array(z.string()).optional(),
-    props: z.record(z.string(), z.object({ x: stat, y: stat, mirror: z.boolean(), width: z.number().positive().max(BIG) })).optional(),
+    defeated: z.array(z.string()), pellets: z.array(count), left: z.optional(z.array(z.string())),
+    props: z.optional(z.record(z.string(), z.object({ x: stat, y: stat, mirror: z.boolean(), width: z.number().check(z.positive(), z.maximum(BIG)) }))),
   })),
   chapters: z.array(z.string()),
-  playTime: z.number().min(0).max(1e9),
-  escapesFailed: count.optional(),
-  escapesMade: count.optional(),
+  playTime: between(0, 1e9),
+  escapesFailed: z.optional(count),
+  escapesMade: z.optional(count),
 });
 
 /** Names a save may not use as keys, since they reach into every JavaScript object. */

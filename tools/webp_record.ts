@@ -10,7 +10,6 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, type Dirent } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { kitMaps, readKitArt } from './kit_art.ts';
 
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const imagesDir = path.join(root, 'src', 'art', 'images');
@@ -76,77 +75,15 @@ export function orphans(): string[] {
 
 export { sha1 };
 
-// ---------------------------------------------------------------------------------------------------------------
-// The images the maps' kit compositions draw from (`kit_art`, tools/kit_art.ts) ship the same way. The masters stay where the
-// kit keeps them under art/tiled; their WebP copies, which a build imports, go in art/tiled/webp at the same paths, so the kit's own
-// folders hold nothing the Tiled tools would take for a tile. Only the images a map's composition uses have a copy.
-
-export const kitDir = path.join(root, 'art', 'tiled');
-export const kitWebpDir = path.join(kitDir, 'webp');
-export const kitRecordFile = path.join(kitWebpDir, 'webp.json');
-
-/** A kit image: its slot-style path under art/tiled without the extension (`beijing/images/ground/ground`), its master, and its hash. */
-export interface KitMaster {
-  slot: string;
-  file: string;
-  hash: string;
-}
-
-/** The images the compositions named by maps use, each once. */
-export function kitMasters(maps?: ReadonlySet<string>): KitMaster[] {
-  const files = new Map<string, KitMaster>();
-  for (const [mapId, composition] of kitMaps(root)) {
-    if (maps && !maps.has(mapId)) continue;
-    for (const img of readKitArt(root, mapId, composition).images) {
-      // The game's own art (src/art/images) has its WebP copies beside it, kept by the art's record.
-      if (files.has(img.file) || !img.file.startsWith(kitDir + path.sep)) continue;
-      const rel = path.relative(kitDir, img.file).split(path.sep).join('/');
-      files.set(img.file, { slot: rel.replace(/\.(png|jpg)$/, ''), file: img.file, hash: sha1(img.file) });
-    }
-  }
-  return [...files.values()].sort((a, b) => a.slot.localeCompare(b.slot));
-}
-
-export function readKitRecord(): WebpRecord {
-  return existsSync(kitRecordFile) ? (JSON.parse(readFileSync(kitRecordFile, 'utf8')) as WebpRecord) : {};
-}
-
-export const kitWebpOf = (m: KitMaster) => path.join(kitWebpDir, `${m.slot}.webp`);
-
-/** The kit masters whose WebP is missing, was made from an older version of them, or is not the WebP made. */
-export function kitStale(maps?: ReadonlySet<string>): KitMaster[] {
-  const rec = readKitRecord();
-  return kitMasters(maps).filter((m) => !current(rec[m.slot], m.hash, kitWebpOf(m)));
-}
-
 /**
- * For the dev server: the current WebP copy of a master, art or kit, or null while the master has to stand in (a copy
- * missing, or made from an older master). Development then shows what a build ships, and new art at once.
+ * For the dev server: the current WebP copy of a master, or null while the master has to stand in (a copy missing, or made
+ * from an older master). Development then shows what a build ships, and new art at once.
  */
-export function currentCopyOf(art = readRecord(), kit = readKitRecord()): (master: string) => string | null {
-  const slotUnder = (dir: string, master: string) => path.relative(dir, master).split(path.sep).join('/').replace(/\.(png|jpg)$/, '');
+export function currentCopyOf(art = readRecord()): (master: string) => string | null {
   return (master) => {
-    if (!/\.(png|jpg)$/.test(master)) return null;
-    // The kit's copies sit in art/tiled/webp; the game's own art keeps each beside its master.
-    const kitSlot = master.startsWith(kitDir + path.sep) ? slotUnder(kitDir, master) : null;
-    const artSlot = master.startsWith(imagesDir + path.sep) ? slotUnder(imagesDir, master) : null;
-    const copy = kitSlot !== null ? path.join(kitWebpDir, `${kitSlot}.webp`) : artSlot !== null ? path.join(imagesDir, `${artSlot}.webp`) : null;
-    const r = kitSlot !== null ? kit[kitSlot] : artSlot !== null ? art[artSlot] : undefined;
-    return copy && current(r, sha1(master), copy) ? copy : null;
+    if (!/\.(png|jpg)$/.test(master) || !master.startsWith(imagesDir + path.sep)) return null;
+    const slot = path.relative(imagesDir, master).split(path.sep).join('/').replace(/\.(png|jpg)$/, '');
+    const copy = path.join(imagesDir, `${slot}.webp`);
+    return current(art[slot], sha1(master), copy) ? copy : null;
   };
-}
-
-/** Kit WebP files no composition's image needs any more (the slot paths, without the extension). */
-export function kitOrphans(): string[] {
-  if (!existsSync(kitWebpDir)) return [];
-  const want = new Set(kitMasters().map((m) => m.slot));
-  const out: string[] = [];
-  const walk = (dir: string, prefix: string) => {
-    for (const d of readdirSync(dir, { withFileTypes: true }) as Dirent[]) {
-      if (d.isDirectory()) walk(path.join(dir, d.name), `${prefix}${d.name}/`);
-      else if (d.name.endsWith('.webp') && !want.has(`${prefix}${d.name.replace(/\.webp$/, '')}`)) out.push(`${prefix}${d.name.replace(/\.webp$/, '')}`);
-    }
-  };
-  walk(kitWebpDir, '');
-  return out.sort();
 }

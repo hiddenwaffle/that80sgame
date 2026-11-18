@@ -1,5 +1,4 @@
 import type { Content } from '../content/content.ts';
-import { LOOK, type LookPart } from '../render/look.ts';
 import { CHAPTER_PICTURE } from './pictures.ts';
 import { ISO_SCENE_ART } from './iso_scene_art.ts';
 import { lookSlotPrefix } from './ghostTints.ts';
@@ -34,7 +33,6 @@ export function artGroups(content: Content, available: readonly string[]): Map<s
     // Static map materials are indirect dependencies, just like the terrain's graffiti.
     add(group, ...available.filter(slot => slot.startsWith(`scenery/${map.id}/`)));
     for (const o of map.objects) {
-      if (typeof o.props.sketch === 'string' && !LOOK.has(o.props.sketch as LookPart)) continue;
       if (o.type === 'npc') look(group,String(o.props.look));
       if (o.type === 'enemy') {
         const name=content.enemies[String(o.props.kind)]?.look;

@@ -2,7 +2,6 @@ import { hundredList, noteWin } from '../game/achievements.ts';
 import { hiddenArea, nearestClearPosition } from './clearance.ts';
 import { trillionsInWords } from '../game/bigNumbers.ts';
 import { frameBackdropBelow } from '../world/framing.ts';
-import { LOOK } from '../render/look.ts';
 import { motion } from '../render/motion.ts';
 import { dirFromVector, dirVector } from '../art/geom.ts';
 import { wholeBox } from '../art/lookArt.ts';
@@ -536,6 +535,7 @@ export class Battle {
   readyMembers(): Fighter[] { return this.party.filter(f => this.isReady(f)); }
   get clockRunning(): boolean { return this.deciding; }
   get mode(): 'queue' | 'finale' { return this.finale ? 'finale' : 'queue'; }
+  /** For the browser checks. */
   get waitingForChoice(): boolean { return this.deciding; }
 
   // ---------------------------------------------------------------------------------------------
@@ -1132,7 +1132,6 @@ export class Battle {
    * is not held, and the fight's own random numbers are not drawn on, so a fixed seed plays the same.
    */
   private fireAtWill(dt: number): void {
-    if (!LOOK.has('rifle')) return;
     const boss = this.livingEnemies().find((e) => e.actor.look === 'boss' && !e.busy);
     if (!boss) return;
     this.burstIn -= dt;
@@ -1367,8 +1366,8 @@ export class Battle {
     g.audio.play('defeat');
     // A boss with words after the fight stays on its feet for them, shuddering; its scene hides it after.
     if (this.isBoss && g.content.encounters[this.encounter]?.after) target.actor.dying = true;
-    // The look's `wreck`: the tank is left on the field a burning wreck, until the fight is over.
-    else if (LOOK.has('wreck') && target.actor.look === 'tank') target.actor.ko = true;
+    // The tank is left on the field a burning wreck, until the fight is over.
+    else if (target.actor.look === 'tank') target.actor.ko = true;
     else {
       this.ui.poof(target.actor);
       target.actor.hidden = true;
@@ -1734,17 +1733,11 @@ export class Battle {
     this.ui.message(g.msg('battle', 'enemy_hit', { actor: f.name, target: g.msg('battle', 'everyone'), amount: f.enemy!.attack }));
     this.world.shakeTime = 0.5;
     this.ui.flash(0.6, 0.3);
-    if (LOOK.has('rifle')) {
-      g.audio.play('burst');
-      await Promise.all([
-        this.ui.rifleBurst(f.actor, hit.map(p => p.actor), { rounds: 3 * Math.max(1, hit.length), hit: true, seed: 4099 }),
-        this.ui.blownAway(f.actor, hit.map(p => p.actor)),
-      ]);
-    } else {
-      g.audio.play('blast');
-      this.ui.blastRings(f.actor);
-      await g.delay(0.6);
-    }
+    g.audio.play('burst');
+    await Promise.all([
+      this.ui.rifleBurst(f.actor, hit.map(p => p.actor), { rounds: 3 * Math.max(1, hit.length), hit: true, seed: 4099 }),
+      this.ui.blownAway(f.actor, hit.map(p => p.actor)),
+    ]);
     if (this.phase !== 'active') return;
     f.countdown = f.countdownMax;
     for (const p of hit) if (p.hp > 0) await this.settle(p, DASH_SPEED, true);

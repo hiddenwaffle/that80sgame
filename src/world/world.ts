@@ -25,7 +25,7 @@ import { HalftoneFilter, PRINT } from '../render/halftone.ts';
 import { drawFire } from '../art/fire.ts';
 import { Sunlight } from '../render/sunlight.ts';
 import { wholeBox } from '../art/lookArt.ts';
-import { LOOK, PLANTS, type LookPart } from '../render/look.ts';
+import { PLANTS } from '../render/look.ts';
 import { markRect, onMark } from '../ui/talkMark.ts';
 import { burstPoints } from '../ui/print.ts';
 import { hashSeed, mulberry32, type Rng } from '../battle/formula.ts';
@@ -308,8 +308,6 @@ export class World {
     this.collision = new Collision(map);
     const world = String(map.props.world ?? 'print');
     this.sorted = world === 'arcade' ? this.arcadeSorted : this.printSorted;
-    // A kit composition's upright pieces (fronts, roofs, props) take their place among the figures by their base.
-    this.terrain.kit?.attach(this.sorted);
     for (const layer of this.terrain.foreground) this.sorted.addChild(layer);
     if (map.props.streets === 'beijing') {
       // The plan is made before the view tips; buildings over a walkway allow for the ground then drawn shorter at full tilt.
@@ -378,8 +376,6 @@ export class World {
     const speakers = new Set(Object.values(this.game.content.characters).map(c => c.actor));
     for (const o of this.map.objects) {
       const p = o.props;
-      // A part of the look's own object (`sketch`), only with that part on.
-      if (typeof p.sketch === 'string' && !LOOK.has(p.sketch as LookPart)) continue;
       // Not there until the story reaches its flags.
       const waits = !requirementsMet(s, p.appears);
       switch (o.type) {
@@ -679,12 +675,12 @@ export class World {
   private plantTurns = 0;
 
   /**
-   * The local plants (the look's `plants`, kept on 2026-10-02): in place of a palm, the plant that grows where this
-   * map is (`PLANTS`), one that likes water by water. Anything else, or with `?look=old`, stays as it is.
+   * The local plants (kept on 2026-10-02): in place of a palm, the plant that grows where this map is (`PLANTS`), one
+   * that likes water by water. Anything else stays as it is.
    */
   private localPlant(o: MapObject, kind: string): string {
     const local = PLANTS[this.map.id];
-    if (!LOOK.has('plants') || kind !== 'palm' || !local) return kind;
+    if (kind !== 'palm' || !local) return kind;
     const [tx, ty] = [Math.floor(o.x / TILE), Math.floor((o.y - 1) / TILE)];
     const water = TERRAINS.findIndex((t) => t.id === 'water');
     for (let dy = -1; dy <= 1; dy++) {
@@ -3753,13 +3749,11 @@ export class World {
     // The scene is drawn with the ground squashed; people, props, and pickups are
     // stretched back by the same amount, so they stand upright on it.
     const upright = 1 / this.ground;
-    this.terrain.kit?.render(this.ground);
     // What the panel shows, with a tile to spare, so the moving terrain draws only that.
     const [vx0, vy0] = this.panelToWorld(0, 0);
     const [vx1, vy1] = this.panelToWorld(this.viewW, this.viewH);
     this.terrain.update(t, [vx0 - TILE, vy0 - TILE, vx1 + TILE, vy1 + TILE]);
     this.tall?.update(this.camY, upright, vy0, vy1);
-    this.terrain.kit?.update({ x0: vx0, y0: vy0, x1: vx1, y1: vy1 }, this.zoom * (this.game.viewportScale ?? 1), this.game.renderResolution ?? 1);
     for (const a of [...this.party, ...this.npcs, ...this.enemies]) {
       // Background figures leave the stage while a fight frames the view, which stops at the map's edge and may
       // take in their corner of it (the owner, 2026-10-18: "the Berlin patrols should not be in the fighting area").
@@ -3844,14 +3838,6 @@ export class World {
     return this.world === 'arcade' ? 0x000000 : C.PAPER;
   }
 
-  lookOf(id: string): string {
-    return this.actor(id)?.look ?? 'olli';
-  }
-
-  sizeOf(look: string): number {
-    return isLook(look) ? LOOKS[look].size : 11;
-  }
-
   /** The finale's hopeful light: Berlin warms and sun rays break in over the map (`[sunlight]`, the owner, 2026-10-19). */
   sunlight(): void {
     if (this.light || this.destroyed) return;
@@ -3877,7 +3863,6 @@ export class World {
     this.view.destroy({ children: true });
     for (const t of this.croppedTextures) t.destroy(false);
     this.croppedTextures = [];
-    this.terrain.kit?.destroy();
   }
 }
 

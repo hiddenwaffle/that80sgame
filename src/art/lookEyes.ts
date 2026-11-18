@@ -14,20 +14,9 @@ export interface LookEye {
 }
 
 export const LOOK_EYES: Record<string, LookEye[]> = {
-  'look/heads/looks/grey_hat_back': [],
-  'look/heads/looks/grey_hat_front': [{ cx: 87.5, cy: 202.5, rx: 15.5, ry: 15.5, lid: 0xfcddc6, ink: 4.5 }, { cx: 136, cy: 201.5, rx: 14.9, ry: 15.4, lid: 0xfcdcc7, ink: 4.5 }],
-  'look/heads/looks/grey_hat_ko': [],
-  'look/heads/looks/grey_hat_side': [{ cx: 136.5, cy: 206.5, rx: 13.2, ry: 18.7, lid: 0xfddec8, ink: 4 }, { cx: 171, cy: 202, rx: 9.6, ry: 17.5, lid: 0xfcdec8, ink: 4.5 }],
-  'look/heads/looks/guard_hat_back': [],
-  'look/heads/looks/guard_hat_front': [{ cx: 87.5, cy: 202.5, rx: 15.5, ry: 15.5, lid: 0xfcddc6, ink: 4.5 }, { cx: 136, cy: 201.5, rx: 14.9, ry: 15.4, lid: 0xfcdcc7, ink: 4.5 }],
-  'look/heads/looks/guard_hat_ko': [],
-  'look/heads/looks/guard_hat_side': [{ cx: 136.5, cy: 206.5, rx: 13.2, ry: 18.7, lid: 0xfddec8, ink: 4 }, { cx: 171, cy: 202, rx: 9.6, ry: 17.5, lid: 0xfcdec8, ink: 4.5 }],
-  'look/rifle/looks/boss_side': [{ cx: 149, cy: 72, rx: 16.5, ry: 16.5, lid: 0xc11c2b, ink: 3 }, { cx: 196.5, cy: 58.5, rx: 11.5, ry: 14.7, lid: 0xc01b2a, ink: 2.5 }],
-  'look/wreck/looks/tank_battered': [{ cx: 138.5, cy: 40, rx: 5.1, ry: 5.6, lid: 0xe2a995, ink: 1 }, { cx: 153.5, cy: 38.5, rx: 4.3, ry: 5.4, lid: 0xf0bb9c, ink: 1 }],
-  'look/wreck/looks/tank_wreck': [],
   'looks/blue_thing_ko': [],
   'looks/blue_thing_side': [{ cx: 197.5, cy: 164, rx: 25.3, ry: 33.9, lid: 0x01d3fb, ink: 4.5 }, { cx: 253.5, cy: 162.5, rx: 16, ry: 33.2, lid: 0x02d5fc, ink: 5 }],
-  'looks/boss_side': [{ cx: 149.5, cy: 76, rx: 17.2, ry: 17.8, lid: 0xb71d2d, ink: 3 }, { cx: 200, cy: 61, rx: 12, ry: 16.2, lid: 0xb61c2d, ink: 3 }],
+  'looks/boss_side': [{ cx: 149, cy: 72, rx: 16.5, ry: 16.5, lid: 0xc11c2b, ink: 3 }, { cx: 196.5, cy: 58.5, rx: 11.5, ry: 14.7, lid: 0xc01b2a, ink: 2.5 }],
   'looks/german_ko': [],
   'looks/german_side': [{ cx: 220, cy: 113, rx: 32.6, ry: 42.9, lid: 0x101010, ink: 5 }, { cx: 290.5, cy: 110.5, rx: 22.2, ry: 42.3, lid: 0x100f10, ink: 5 }],
   'looks/ghost_blue_back': [],
@@ -52,7 +41,7 @@ export const LOOK_EYES: Record<string, LookEye[]> = {
   'looks/gorbie_ko': [],
   'looks/gorbie_side': [{ cx: 217.5, cy: 124.5, rx: 35.5, ry: 41.6, lid: 0xfeffff, ink: 5.5 }, { cx: 286.5, cy: 123, rx: 20.2, ry: 47.5, lid: 0xffffff, ink: 6.5 }],
   'looks/grey_hat_back': [],
-  'looks/grey_hat_front': [],
+  'looks/grey_hat_front': [{ cx: 87.5, cy: 202.5, rx: 15.5, ry: 15.5, lid: 0xfcddc6, ink: 4.5 }, { cx: 136, cy: 201.5, rx: 14.9, ry: 15.4, lid: 0xfcdcc7, ink: 4.5 }],
   'looks/grey_hat_ko': [],
   'looks/grey_hat_side': [{ cx: 136.5, cy: 206.5, rx: 13.2, ry: 18.7, lid: 0xfddec8, ink: 4 }, { cx: 171, cy: 202, rx: 9.6, ry: 17.5, lid: 0xfcdec8, ink: 4.5 }],
   'looks/guard_cap_back': [],
@@ -75,5 +64,7 @@ export const LOOK_EYES: Record<string, LookEye[]> = {
   'looks/soldier_front': [{ cx: 91.5, cy: 158.5, rx: 30.2, ry: 29.2, lid: 0xfccca0, ink: 4 }, { cx: 153.5, cy: 156, rx: 29.5, ry: 29, lid: 0xfccda0, ink: 3.5 }],
   'looks/soldier_ko': [],
   'looks/soldier_side': [{ cx: 191, cy: 159, rx: 25.7, ry: 33.1, lid: 0xfdca9e, ink: 4 }, { cx: 230.5, cy: 154.5, rx: 18.6, ry: 33.8, lid: 0xfcc89d, ink: 4.5 }],
+  'looks/tank_battered': [{ cx: 138.5, cy: 40, rx: 5.1, ry: 5.6, lid: 0xe2a995, ink: 1 }, { cx: 153.5, cy: 38.5, rx: 4.3, ry: 5.4, lid: 0xf0bb9c, ink: 1 }],
   'looks/tank_side': [{ cx: 132, cy: 35.5, rx: 5.5, ry: 6.1, lid: 0xe5ab92, ink: 1 }, { cx: 146, cy: 34, rx: 4.1, ry: 5.3, lid: 0xe7af95, ink: 1 }],
+  'looks/tank_wreck': [],
 };

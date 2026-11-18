@@ -1,64 +1,4 @@
 {
- "look/heads/looks/grey_hat_back": {
-  "from": "0f66b9089e6d678d1bd5f77dc7758b70c300d3e2",
-  "webp": "0ba05333b2e40195b8bb6fca9c74ef05c600e219"
- },
- "look/heads/looks/grey_hat_front": {
-  "from": "da7407b619654fb68d89a7acf09ef257ce944d5d",
-  "webp": "2cf790f58535c98fa0443d714bb11c4306a04dc6"
- },
- "look/heads/looks/grey_hat_ko": {
-  "from": "2ca0589c67653b69149391a59fdeb75367129e40",
-  "webp": "6835af5a923da57c906439a8bd6ff92fd9ec3a78"
- },
- "look/heads/looks/grey_hat_side": {
-  "from": "8cda23ebbd0fae9f4d1d96497fa01b4ec5d45fc5",
-  "webp": "3634dd97807143ca6d7dfef4190316eb182ae7e8"
- },
- "look/heads/looks/guard_hat_back": {
-  "from": "0f66b9089e6d678d1bd5f77dc7758b70c300d3e2",
-  "webp": "0ba05333b2e40195b8bb6fca9c74ef05c600e219"
- },
- "look/heads/looks/guard_hat_front": {
-  "from": "da7407b619654fb68d89a7acf09ef257ce944d5d",
-  "webp": "2cf790f58535c98fa0443d714bb11c4306a04dc6"
- },
- "look/heads/looks/guard_hat_ko": {
-  "from": "2ca0589c67653b69149391a59fdeb75367129e40",
-  "webp": "6835af5a923da57c906439a8bd6ff92fd9ec3a78"
- },
- "look/heads/looks/guard_hat_side": {
-  "from": "8cda23ebbd0fae9f4d1d96497fa01b4ec5d45fc5",
-  "webp": "3634dd97807143ca6d7dfef4190316eb182ae7e8"
- },
- "look/rifle/looks/boss_side": {
-  "from": "96b333710f60e3983d9d24ed7c5c104a0bf2f54a",
-  "webp": "dcf787c3326059b2d8db63903e369ddc91517634"
- },
- "look/square/props/banner": {
-  "from": "e2f5bab230653382ab69703f5f31d3ac29a68675",
-  "webp": "82bd9808fdbfd3c28d8566a7db38824b5e3a1fba"
- },
- "look/square/props/bicycle": {
-  "from": "d7ee7603656190a28e2d2a0578f09802ce3aecaf",
-  "webp": "644da511a32d06f67dec039322d02f171d755a0c"
- },
- "look/square/props/statue": {
-  "from": "02257eaebbb5aa559ba1d892d93ef79c28c58b6e",
-  "webp": "a47bace62dca9215501c88e034363b7eb87e77b5"
- },
- "look/wreck/looks/tank_battered": {
-  "from": "1b691983e5f4b652c963d4782ee4d7dcd8288aba",
-  "webp": "1149b04b7e893aff6ae927ff0d884c622180b78c"
- },
- "look/wreck/looks/tank_wreck": {
-  "from": "98b29d4ce782859b6abdd6516ac6d9cbb75ffb3a",
-  "webp": "1fa715f9ede111de582ff96f8308c219d999ae43"
- },
- "look/wreck/props/tank_wreck": {
-  "from": "98b29d4ce782859b6abdd6516ac6d9cbb75ffb3a",
-  "webp": "1fa715f9ede111de582ff96f8308c219d999ae43"
- },
  "looks/blue_thing_ko": {
   "from": "36f313b3f0273b47780a8f6911391132f3bd7bae",
   "webp": "511183b34852f1d69590d8932c16157ed0919935"
@@ -68,8 +8,8 @@
   "webp": "bdf515c16ef99c4a372fd5bd2f2791e2c2005bca"
  },
  "looks/boss_side": {
-  "from": "0e5c0bd69410480ee41f47a39dc308798c073b6d",
-  "webp": "c0d256fd29ea21341881adc7e4163890f7289a46"
+  "from": "96b333710f60e3983d9d24ed7c5c104a0bf2f54a",
+  "webp": "dcf787c3326059b2d8db63903e369ddc91517634"
  },
  "looks/german_ko": {
   "from": "d8ddb8a088d6b231c43c42f2b354ca1c8b71dcb4",
@@ -224,12 +164,12 @@
   "webp": "0e5a72cded292b94debe446a8111b55bd2ddd284"
  },
  "looks/grey_hat_back": {
-  "from": "369b8ffa99a988218eb7e24008b89064542114ea",
-  "webp": "9a0cc7d9ab504df9ec428d5ec3ec4c267adcb094"
+  "from": "0f66b9089e6d678d1bd5f77dc7758b70c300d3e2",
+  "webp": "0ba05333b2e40195b8bb6fca9c74ef05c600e219"
  },
  "looks/grey_hat_front": {
-  "from": "1e4bcb8bd28729acdfe43e9e46dc8de1f304a070",
-  "webp": "d1de37d4a94dbd00d078daa978920ccf3e6fe2ff"
+  "from": "da7407b619654fb68d89a7acf09ef257ce944d5d",
+  "webp": "2cf790f58535c98fa0443d714bb11c4306a04dc6"
  },
  "looks/grey_hat_ko": {
   "from": "2ca0589c67653b69149391a59fdeb75367129e40",
@@ -256,8 +196,8 @@
   "webp": "fed77e1eba650720f92417447b7dd4c80dc8c4e9"
  },
  "looks/guard_hat_back": {
-  "from": "369b8ffa99a988218eb7e24008b89064542114ea",
-  "webp": "9a0cc7d9ab504df9ec428d5ec3ec4c267adcb094"
+  "from": "0f66b9089e6d678d1bd5f77dc7758b70c300d3e2",
+  "webp": "0ba05333b2e40195b8bb6fca9c74ef05c600e219"
  },
  "looks/guard_hat_front": {
   "from": "da7407b619654fb68d89a7acf09ef257ce944d5d",
@@ -319,9 +259,17 @@
   "from": "6bdb3771a7fa497fc9c490791c4f25653af3c3a5",
   "webp": "fed77e1eba650720f92417447b7dd4c80dc8c4e9"
  },
+ "looks/tank_battered": {
+  "from": "1b691983e5f4b652c963d4782ee4d7dcd8288aba",
+  "webp": "1149b04b7e893aff6ae927ff0d884c622180b78c"
+ },
  "looks/tank_side": {
   "from": "a19d545a64cda6bf97544a88c7211b9155f73c20",
   "webp": "fa7a48443c9ee34573f7d95e01cb613acb30a29f"
+ },
+ "looks/tank_wreck": {
+  "from": "98b29d4ce782859b6abdd6516ac6d9cbb75ffb3a",
+  "webp": "1fa715f9ede111de582ff96f8308c219d999ae43"
  },
  "pictures/credits_curtain": {
   "from": "b4719fb3d33d6c8f13e373f89b3e6c37cff0ad90",
@@ -358,6 +306,14 @@
  "pictures/wall": {
   "from": "bd8a8381a62b0d21ec1920509c27287e4bfcd720",
   "webp": "68bc568f5c6f9026dfb0f9c3af34f8ee425880a2"
+ },
+ "props/banner": {
+  "from": "e2f5bab230653382ab69703f5f31d3ac29a68675",
+  "webp": "82bd9808fdbfd3c28d8566a7db38824b5e3a1fba"
+ },
+ "props/bicycle": {
+  "from": "d7ee7603656190a28e2d2a0578f09802ce3aecaf",
+  "webp": "644da511a32d06f67dec039322d02f171d755a0c"
  },
  "props/flower_cornflower": {
   "from": "f0f56cf5b38f72c423f8b74025bcffaf9ef96d3e",
@@ -439,9 +395,13 @@
   "from": "1788518dc9aef6ecec17d2a458d8f54f0a44b825",
   "webp": "46dfe578ef5b150e6549c5e44ffc7e20458bbdef"
  },
- "props/palm": {
-  "from": "7da6aec9dba5a5346c8772e7ebf907374427fdcd",
-  "webp": "7566eee45d4d8afa595d9fd996a096c102e52d18"
+ "props/statue": {
+  "from": "02257eaebbb5aa559ba1d892d93ef79c28c58b6e",
+  "webp": "a47bace62dca9215501c88e034363b7eb87e77b5"
+ },
+ "props/tank_wreck": {
+  "from": "98b29d4ce782859b6abdd6516ac6d9cbb75ffb3a",
+  "webp": "1fa715f9ede111de582ff96f8308c219d999ae43"
  },
  "props/willow": {
   "from": "240215022f689b4e49fa33da4513dbddf4baabe2",

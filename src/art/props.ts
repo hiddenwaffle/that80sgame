@@ -144,8 +144,8 @@ function saveStar(g: Graphics, t: number) {
 }
 
 
-// The props of the look's parts first made as sketches (src/render/look.ts): their art loads only with their part on, and these code
-// drawings stand in with art off.
+// The props first made as sketches of the look (src/render/look.ts): the square's and the wreck's. These code drawings
+// stand in with art off.
 
 // Street things and the Wall's broken end, code drawings until there is art.
 
@@ -229,7 +229,7 @@ export const PROPS: Record<string, PropInfo> = {
   garden_bush: { foot: [0, 0], height: 26, draw: gardenPiece(30, 26, 0x4f9a3f) },
   garden_barrel: { foot: [0, 0], height: 22, draw: gardenPiece(16, 22, 0x8a5a30) },
   garden_gnome: { foot: [0, 0], height: 12, draw: gardenPiece(8, 12, 0xd8352a) },
-  // The props of the look's parts first made as sketches (src/render/look.ts), which stand only with their part on (the map object's `sketch`).
+  // The props first made as sketches of the look (src/render/look.ts): the square's.
   banner: { foot: [0, 0], height: 34, draw: banner },
   bicycle: { foot: [0, 0], height: 24, drawn: 22, draw: bicycle },
   // A pac since 2026-11-09 (the owner). Its art is drawn on a canvas 96 tall at the drawing's scale, the statue itself

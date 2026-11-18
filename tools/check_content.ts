@@ -14,9 +14,7 @@ import { ITEM_KINDS } from '../src/world/berlin_items.ts';
 import { STREET_PIECES } from '../src/world/berlin_street_sketch.ts';
 import { Collision, propCollisionBox } from '../src/world/collision.ts';
 import { patrolLayouts } from '../src/world/patrol_walk.ts';
-import { kitCity, kitMaps, readKitArt } from './kit_art.ts';
-import { recordCities, staleRecords } from './kit_masters.ts';
-import { kitOrphans, kitStale, orphans, stale } from './webp_record.ts';
+import { orphans, stale } from './webp_record.ts';
 import { isMain } from './is_main.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -130,23 +128,6 @@ if (isMain(import.meta.url)) {
   // The art's WebP copies, which the game loads, must match their masters (tools/webp_record.ts).
   for (const m of stale()) errors.push({ file: path.relative(root, m.file), line: 0, message: 'its WebP copy is missing, older than it, or not the one made from it; run node tools/art_webp.ts' });
   for (const slot of orphans()) errors.push({ file: `src/art/images/${slot}.webp`, line: 0, message: 'has no master beside it; run node tools/art_webp.ts' });
-  // A map drawn from a kit composition (`kit_art`, tools/kit_art.ts): the composition must read, with its tilesets and images, be as many cells as the map
-  // has tiles, and have a WebP copy of each image (made by tools/art_webp.ts) that is current.
-  for (const [mapId, composition] of kitMaps(root)) {
-    const map = content?.maps.get(mapId);
-    try {
-      const { art } = readKitArt(root, mapId, composition, { requireScanned: true });
-      if (map && (art.cols !== map.width || art.rows !== map.height)) errors.push({ file: `content/maps/${mapId}.tmj`, line: 0, message: `is ${map.width} by ${map.height} tiles, but its kit art ${composition} is ${art.cols} by ${art.rows} cells` });
-    } catch (e) {
-      errors.push({ file: `content/maps/${mapId}.tmj`, line: 0, message: (e as Error).message });
-    }
-  }
-  // The record of which masters the kit's tiles were made from (tools/kit_masters_scan.ts) must be of the pictures as they are. Every city that
-  // has a record is audited, not only those a map is drawn from: Berlin's library is kept (and tested) with no map drawn from its kit.
-  for (const { city, file } of staleRecords(root, [...kitMaps(root).map(([, composition]) => kitCity(composition)), ...recordCities(root)]))
-    errors.push({ file, line: 0, message: `has changed since art/tiled/${city}/kit_masters.json was made; run node tools/kit_masters_scan.ts --city=${city}` });
-  for (const m of kitStale()) errors.push({ file: path.relative(root, m.file), line: 0, message: 'its WebP copy (art/tiled/webp) is missing, older than it, or not the one made from it; run node tools/art_webp.ts' });
-  for (const slot of kitOrphans()) errors.push({ file: `art/tiled/webp/${slot}.webp`, line: 0, message: 'is no composition image any more; run node tools/art_webp.ts' });
   if (content) errors.push(...patrolErrors(content.maps), ...flagErrors(content, gameSources()), ...pieceErrors(content.maps));
   for (const e of errors) console.log(`${e.file}${e.line ? `:${e.line}` : ''}  ${e.message}`);
   if (content) {

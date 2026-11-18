@@ -424,10 +424,6 @@ export class Balloon {
   private chevron: Graphics | null = null;
   private skippingNow = false;
 
-  get skipping(): boolean {
-    return this.skippingNow;
-  }
-
   /** While Confirm is held to skip lines, a double chevron takes the finished mark's place; it does not bob. */
   setSkipping(on: boolean): void {
     if (on === this.skippingNow) return;

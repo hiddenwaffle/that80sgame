@@ -4,8 +4,7 @@ import { Application } from 'pixi.js';
 // 15 Nov: "it seems like adding the file makes sense").
 import 'pixi.js/browser';
 import { artFailed, artForMap, artProgress, artReady, artSources, loadArt, whenArtReady } from './art/images.ts';
-import { contentFiles } from './content/bundle.ts';
-import { loadContent } from './content/content.ts';
+import { builtContent } from './content/bundle.ts';
 import { devStartMap, devStartsInPlay, installDev, showContentErrors } from './dev/dev.ts';
 import { installFrameReadout } from './dev/frame_readout.ts';
 import { blockContextMenu } from './engine/contextMenu.ts';
@@ -71,7 +70,7 @@ async function boot() {
   });
   await loadFonts();
   loaderBootProgress('fonts', 1);
-  const { content, errors } = loadContent(contentFiles());
+  const { content, errors } = builtContent();
   if (errors.length) showContentErrors(errors);
   if (!content) throw new Error('The content has errors that stop the game from starting. See the list above.');
   const initialMap = devStartsInPlay() ? devStartMap(content) : loadGame(content)?.map ?? content.party.start.map;

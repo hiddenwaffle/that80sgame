@@ -3,7 +3,6 @@ import { LOOKS, type LookId, type LookInfo, type Pose } from '../art/characters.
 import { drawFire } from '../art/fire.ts';
 import { drawLookArt, headPoint, LOOK_ART, wholeSpan } from '../art/lookArt.ts';
 import { foilClock } from '../art/ghostFoil.ts';
-import { LOOK } from '../render/look.ts';
 import type { Dir } from '../art/geom.ts';
 import type { MapObject } from '../content/tiled.ts';
 import { motion } from '../render/motion.ts';
@@ -144,7 +143,6 @@ export class Actor {
   turnIn = -1;
   /** Behaviour state for wandering and patrols. */
   aiTimer = 0;
-  aiDir = 1;
   /** The patrol has noticed the party; drawn upright above its head. */
   alert = false;
   private readonly alertMark = new Graphics();
@@ -288,7 +286,7 @@ export class Actor {
     const roll = Boolean(info.rolls) && !this.ko && (this.facing === 'up' || this.facing === 'down');
     const drawFacing = roll ? this.side : this.facing;
     const turn = !roll ? 0 : (this.facing === 'up') === (this.side === 'right') ? -Math.PI / 2 : Math.PI / 2;
-    const wrecks = LOOK.has('wreck') && (this.look === 'tank' || this.look === 'boss');
+    const wrecks = this.look === 'tank' || this.look === 'boss';
     const blink = (blinking(this.id, t, this.ko, this.hurt > 0, motion.reduced) || (this.blinkNow && !motion.reduced)) && !this.dazed;
     // An upright figure drawn from its picture (the ghosts) looks the same at every walk step, so neither step nor walking is in
     // its key: its picture was rebuilt 20 times a second with the same result (Fable review P15). The hop still reads `step`.

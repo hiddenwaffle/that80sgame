@@ -1,5 +1,4 @@
 import { LineCounter, parseDocument } from 'yaml';
-import { LOOK_PARTS, SKETCH_KINDS, type LookPart } from '../render/look.ts';
 import type { z } from 'zod';
 import { LOOKS } from '../art/characters.ts';
 import { PROPS } from '../art/props.ts';
@@ -410,10 +409,6 @@ export function crossCheck(c: Content): ContentError[] {
       const t = Number(tilt);
       if (String(tilt).trim() === '' || !(t >= 0 && t <= 1)) at(m.file, 0, `Map property "tilt" must be a number from 0 (straight down) to 1 (full tilt), not "${tilt}".`);
     }
-    // A map drawn from a Tiled kit composition (tools/kit_art.ts reads it; the check script reads that it fits the map).
-    const kit = m.props.kit_art;
-    if (kit !== undefined && !(typeof kit === 'string' && /^art\/tiled\/.+\.tmj$/.test(kit))) at(m.file, 0, `Map property "kit_art" must be the path of a composition under art/tiled, such as "art/tiled/beijing/compositions/alley3_a.tmj", not "${kit}".`);
-    if (kit !== undefined && world !== 'print') at(m.file, 0, 'A map with "kit_art" must be a print world: the kit draws the printed tilt.');
     const ease = m.props.tilt_ease_x;
     if (ease !== undefined) {
       const ok = /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(String(ease));
@@ -469,11 +464,7 @@ export function crossCheck(c: Content): ContentError[] {
         at(m.file, 0, `${where(o)}: "frame_party" can only be true on an area.`);
       if (p.appears !== undefined && (typeof p.appears !== 'string' || !['prop', 'npc'].includes(o.type)))
         at(m.file, 0, `${where(o)}: "appears" takes flags, as "requires" does, and only props and townspeople (npc) appear; a trigger uses "requires".`);
-      if (p.sketch !== undefined && (!LOOK_PARTS.includes(String(p.sketch) as LookPart) || !['prop', 'npc'].includes(o.type)))
-        at(m.file, 0, `${where(o)}: "sketch" names the part of the look a prop or townsperson (npc) stands with: one of ${LOOK_PARTS.join(', ')}.`);
       if (p.pop !== undefined && (p.pop !== false || p.appears === undefined)) at(m.file, 0, `${where(o)}: "pop" can only be false, on something that "appears", to be there without a burst.`);
-      const sketchKind = o.type === 'prop' ? SKETCH_KINDS[String(p.kind)] : undefined;
-      if (sketchKind && p.sketch !== sketchKind) at(m.file, 0, `${where(o)}: a ${p.kind} belongs to the look's ${sketchKind}, so it needs "sketch": "${sketchKind}", or it would stand with ${sketchKind} off too.`);
       switch (o.type) {
         case 'npc':
           if (!(String(p.look) in LOOKS)) at(m.file, 0, `${where(o)}: unknown look "${p.look}".`);

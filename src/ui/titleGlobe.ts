@@ -165,7 +165,6 @@ export class TitleGlobe {
   /** How long drawing the map took, in milliseconds. */
   readonly buildMs: number;
   readonly bakeInfo: Record<string, number | string | boolean>;
-  readonly ready = Promise.resolve();
   private source: TextureSource;
   private unsubscribe?: () => void;
   private readonly mesh: Mesh<MeshGeometry, Shader>;

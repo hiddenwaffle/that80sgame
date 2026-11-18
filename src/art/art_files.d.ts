@@ -11,11 +11,3 @@ declare module 'virtual:art-sources' {
   const files: Record<string, string | null>;
   export default files;
 }
-
-declare module 'virtual:kit-art' {
-  /** The images the kit compositions draw from, by slot, with their address (null as for `files`) and size (vite.config.ts). */
-  export const kitImages: Record<string, { url: string | null; bytes: number; width: number; height: number }>;
-  /** Each map's kit composition (its `kit_art` property), by map id. */
-  const arts: Record<string, import('../../tools/kit_art.ts').KitArt>;
-  export default arts;
-}

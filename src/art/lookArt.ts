@@ -1,7 +1,6 @@
 import { ColorMatrixFilter, Container, Graphics, Sprite } from 'pixi.js';
-import { LOOK } from '../render/look.ts';
 import type { Dir } from './geom.ts';
-import { art, artFile } from './images.ts';
+import { art } from './images.ts';
 import { LOOK_FIT } from './lookFit.ts';
 import { LOOK_INK } from './lookInk.ts';
 import { LOOK_EYES } from './lookEyes.ts';
@@ -152,8 +151,8 @@ export function drawLookArt(c: Container, look: LookId, pose: Pose, size: number
   const how = LOOK_ART[look];
   if (!how) return false;
   const koBall = pose.ko && how.kind === 'ball';
-  // The look's `wreck`: the tank battered from half its HP down, and a burnt-out wreck once beaten.
-  const stage = look === 'tank' && LOOK.has('wreck') ? (pose.ko ? art('looks/tank_wreck') && 'looks/tank_wreck' : (pose.damage ?? 0) >= 0.5 && art('looks/tank_battered') ? 'looks/tank_battered' : null) : null;
+  // The tank battered from half its HP down, and a burnt-out wreck once beaten.
+  const stage = look === 'tank' ? (pose.ko ? art('looks/tank_wreck') && 'looks/tank_wreck' : (pose.damage ?? 0) >= 0.5 && art('looks/tank_battered') ? 'looks/tank_battered' : null) : null;
   // A ghost in its own colour: its painted shape's grey body, tinted, with that shape's eyes over it untinted.
   const tint = GHOST_TINTS[look];
   // A whole figure has a side view only: facing up or down it shows it facing left, as its code drawing does.
@@ -181,8 +180,8 @@ export function drawLookArt(c: Container, look: LookId, pose: Pose, size: number
       sp.scale.set(mirror ? -kx : kx, k);
       sp.position.set(0, size);
     } else {
-      // A part of the look's own art has its own measurements, under its file's name.
-      const fit = LOOK_FIT[artFile(slot)]!;
+      // Each picture has its own measurements, under its slot.
+      const fit = LOOK_FIT[slot]!;
       const k = size / fit.r;
       sp.scale.set(mirror ? -k : k, k);
       // The circle's middle on the body's middle.
@@ -191,7 +190,7 @@ export function drawLookArt(c: Container, look: LookId, pose: Pose, size: number
     return !(sp instanceof Sprite) ? sp : slot === 'looks/tank_wreck' ? clipWreckArtifact(sp)
       : slot === 'looks/tank_battered' ? clipBatteredArtifact(sp) : sp;
   };
-  if (how.kind === 'ball' && !LOOK_FIT[artFile(slot)]) return false;
+  if (how.kind === 'ball' && !LOOK_FIT[slot]) return false;
   const foil = tint?.foil === true;
   const picture = foil ? foilGhost(tex) : new Sprite(tex);
   if (tint && picture instanceof Sprite) picture.tint = tint.color;
@@ -212,7 +211,7 @@ export function drawLookArt(c: Container, look: LookId, pose: Pose, size: number
     // The owner, 2026-10-10: occasional natural blinks across the cast. Lids share the picture's placement, so
     // they mirror, roll and follow its mouth mask with it, including alternate art and the tank's driver.
     // A tinted ghost's eyes are where its painted shape's are, and its lids are its own colour.
-    const file = tint ? `looks/ghost_${tint.shape}_${view(pose.facing)}` : artFile(slot);
+    const file = tint ? `looks/ghost_${tint.shape}_${view(pose.facing)}` : slot;
     const lids = new Graphics();
     // A foil ghost's lids are its foil, shown through the skin's shapes over the eyes.
     const skin = foil ? new Graphics() : null;
@@ -261,32 +260,8 @@ export function drawLookArt(c: Container, look: LookId, pose: Pose, size: number
   // The mouth's edges, at the picture's outline weight (in its pixels) scaled as the picture is, ending with their
   // round tips at its outer edge where the mouth meets it, so they join the outline rather than poke past it (the
   // owner, 2026-10-14: Olli's "lip ends at the border of the circle and looks connected exactly, like pacman").
-  const { ink, reach } = lipLine(artFile(slot), size);
-  if (LOOK.has('mouths')) {
-    jaw(c, inner, pose, size, ink, reach);
-    return true;
-  }
-  const angle = pose.facing === 'right' ? 0 : pose.facing === 'down' ? Math.PI / 2 : pose.facing === 'left' ? Math.PI : -Math.PI / 2;
-  // Narrower than the code drawing's, so the eyes high on the ball stay clear of it; from the side it opens more
-  // below than above, like a jaw dropping, for the same reason.
-  const m = pose.mouth * 0.6;
-  if (m > 0.001) {
-    const side = pose.facing === 'left' || pose.facing === 'right';
-    const up = side ? m * 0.6 : m;
-    const down = side ? m * 1.4 : m;
-    const [a0, a1] = pose.facing === 'left' ? [angle - down, angle + up] : [angle - up, angle + down];
-    // The mouth: a wedge cut from the ball, as a hole in a mask over everything the image draws.
-    const reach = size * 1.05;
-    const wedge = [0, 0];
-    for (let i = 0; i <= 10; i++) {
-      const a = a0 + ((a1 - a0) * i) / 10;
-      wedge.push(Math.cos(a) * reach, Math.sin(a) * reach);
-    }
-    const mask = new Graphics().rect(-size * 4, -size * 4, size * 8, size * 8).fill(0xffffff).poly(wedge).cut();
-    inner.mask = mask;
-    c.addChild(mask);
-    inkEdges(c, [a0, a1].map((a): Edge => [0, 0, Math.cos(a) * reach, Math.sin(a) * reach]), ink, Boolean(pose.hurt));
-  }
+  const { ink, reach } = lipLine(slot, size);
+  jaw(c, inner, pose, size, ink, reach);
   return true;
 }
 

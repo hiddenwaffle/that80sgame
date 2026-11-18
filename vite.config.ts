@@ -4,15 +4,16 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
-import { masters, stale, orphans, kitStale, kitWebpDir, kitDir, currentCopyOf } from './tools/webp_record.ts';
+import { masters, stale, orphans, currentCopyOf } from './tools/webp_record.ts';
 import { imageFactsUnder, imageSize } from './tools/image_size.ts';
-import { kitMaps, readKitArt } from './tools/kit_art.ts';
-import { INCLUDE_DEV_MAPS, keepScenery, readBuildFiles, selectBuildContent, type BuildContent } from './tools/production_content.ts';
+import { loadContent } from './src/content/content.ts';
+import { contentForGame, INCLUDE_DEV_MAPS, keepScenery, readBuildFiles, selectBuildContent, type BuildContent } from './tools/production_content.ts';
 import { completeLicenses, LICENSES_FILE, readTexts, renderLicenses, textsDir, VITE_LICENSES, type LicenseEntry } from './tools/third_party_licenses.ts';
 
 /** The module listing each art image's size in bytes and pixels (`artFiles` below). */
 const ART_FILES = 'virtual:art-files';
-const CONTENT_FILES = 'virtual:content-files';
+/** The content, read and checked here, as the game gets it (src/content/bundle.ts). */
+const CONTENT = 'virtual:content';
 /** URL imports are selected before bundling, so production never emits source masters. */
 const ART_SOURCES = 'virtual:art-sources';
 const here = fileURLToPath(new URL('.', import.meta.url)).split(path.sep).join('/').replace(/\/+$/, '');
@@ -51,8 +52,8 @@ function restartOnConfigChange(): Plugin {
 }
 
 /**
- * With hmr off, refreshes need the content glob and generated art catalogs invalidated when their files change.
- * Otherwise a new content file or picture can remain missing until the dev server restarts.
+ * With hmr off, refreshes need the generated art catalogs invalidated when their files change. Otherwise a new picture can
+ * remain missing until the dev server restarts. The content's module follows its files itself (contentBundle).
  */
 function globsFollowNewFiles(): Plugin {
   return {
@@ -60,7 +61,6 @@ function globsFollowNewFiles(): Plugin {
     configureServer(server) {
       const root = server.config.root;
       const lists: Array<[string, string]> = [
-        [path.join(root, 'content') + path.sep, path.join(root, 'src/content/bundle.ts')],
         [path.join(root, 'src/art/images') + path.sep, path.join(root, 'src/art/images.ts')],
       ];
       const stale = (file: string) => {
@@ -85,7 +85,11 @@ function globsFollowNewFiles(): Plugin {
   };
 }
 
-/** Content and both art catalogs share one selection for each build. */
+/**
+ * Content and both art catalogs share one selection for each build. The game gets the content read, checked and packed
+ * (tools/production_content.ts contentForGame), never its files, so the YAML reader and the check stay out of it
+ * (contentCheckStaysOut). JSON.parse, as V8 reads a large literal faster that way.
+ */
 function contentBundle() {
   let root = '', production = false, selected: BuildContent | undefined;
   const selection = () => selected ??= selectBuildContent(readBuildFiles(root), !production || process.env[INCLUDE_DEV_MAPS] === '1');
@@ -93,18 +97,21 @@ function contentBundle() {
     name: 'content-bundle',
     configResolved(config) { root = config.root; production = config.command === 'build'; selected = undefined; },
     buildStart() { selected = undefined; },
-    resolveId: id => id === CONTENT_FILES ? '\0' + id : undefined,
+    resolveId: id => id === CONTENT ? '\0' + id : undefined,
     load(id) {
-      if (id !== '\0' + CONTENT_FILES) return;
+      if (id !== '\0' + CONTENT) return;
       const files = selection().files;
       for (const file of files.keys()) this.addWatchFile(path.join(root, file));
-      return `export default ${JSON.stringify(Object.fromEntries(files))};`;
+      const built = contentForGame(loadContent(files));
+      // The dev server's page lists the problems; a build has none to show.
+      if (production && built.errors.length) this.error(['The content has problems:', ...built.errors.map(e => `${e.file}${e.line ? `:${e.line}` : ''}  ${e.message}`)].join('\n'));
+      return `export default JSON.parse(${JSON.stringify(JSON.stringify(built))});`;
     },
     configureServer(server) {
       const stale = (file: string) => {
         if (!path.resolve(file).startsWith(path.join(root, 'content') + path.sep)) return;
         selected = undefined;
-        const mod = server.moduleGraph.getModuleById('\0' + CONTENT_FILES);
+        const mod = server.moduleGraph.getModuleById('\0' + CONTENT);
         if (mod) server.moduleGraph.invalidateModule(mod);
       };
       for (const event of ['add', 'unlink', 'change']) server.watcher.on(event, stale);
@@ -113,6 +120,30 @@ function contentBundle() {
   return { plugin, selection };
 }
 const content = contentBundle();
+
+/**
+ * The game gets its content read and checked already (contentBundle), and checks saves with zod's small edition (src/game/state.ts),
+ * so none of these has a place in it. One value imported from src/content/content.ts, or one save check written with the full
+ * zod, would bring them back without a word (about 210 kB of minified script did until 18 Nov); a build that holds any stops.
+ */
+function contentCheckStaysOut(): Plugin {
+  const kept: Array<[string, RegExp]> = [
+    ['the YAML reader, node_modules/yaml', /\/node_modules\/yaml\//], ['the full zod, node_modules/zod/v4/classic', /\/node_modules\/zod\/v4\/classic\//],
+    ['src/content/content.ts', /\/src\/content\/content\.ts$/], ['src/content/schemas.ts', /\/src\/content\/schemas\.ts$/],
+  ];
+  return {
+    name: 'content-check-stays-out',
+    apply: 'build',
+    generateBundle(_, bundle) {
+      const ids = Object.values(bundle).flatMap(o => o.type === 'chunk' ? Object.entries(o.modules).filter(([, m]) => m.renderedLength > 0).map(([id]) => id) : []);
+      const held = kept.filter(([, re]) => ids.some(id => re.test(id))).map(([what]) => `  ${what}`);
+      if (held.length) this.error([
+        'The game holds code that only reads or checks content, or the full zod:', ...held,
+        'The game takes only types from src/content/content.ts and src/content/schemas.ts (import type), and zod from zod/mini.',
+      ].join('\n'));
+    },
+  };
+}
 
 /**
  * In development each master is served as a build ships it: its WebP copy, only while the copy is current. A master whose
@@ -172,83 +203,10 @@ function artFiles(): Plugin {
   };
 }
 
-
-/** The module holding the kit compositions the maps name (`kit_art`, tools/kit_art.ts) and the images they draw from. */
-const KIT_ART = 'virtual:kit-art';
-function kitArt(): Plugin {
-  let root = '';
-  let production = false;
-  return {
-    name: 'kit-art',
-    configResolved(config) {
-      root = config.root;
-      production = config.command === 'build';
-    },
-    buildStart() {
-      if (!production) return;
-      // An unchecked tile must name the scan it needs before its fallback looks like a missing WebP.
-      for (const [mapId, composition] of kitMaps(root)) {
-        if (content.selection().maps.has(mapId)) readKitArt(root, mapId, composition, { requireScanned: true });
-      }
-      // Like the art, a build holds the WebP copies only, so each must be there and made from the master as it is now.
-      // Unreachable compositions may be unfinished. Validate only imported images here; check_content still audits the full library.
-      const bad = kitStale(content.selection().maps);
-      if (bad.length) this.error([
-        'Production kit art requires current WebP copies; the masters under art/tiled are never bundled.',
-        ...bad.map(m => `Missing or stale WebP: ${m.slot}`),
-        'Run node tools/art_webp.ts, then build again.',
-      ].join('\n'));
-    },
-    resolveId: (id) => (id === KIT_ART ? '\0' + id : undefined),
-    load(id) {
-      if (id !== '\0' + KIT_ART) return;
-      const arts: Record<string, unknown> = {};
-      const images = new Map<string, { file: string | null; bytes: number; width: number; height: number }>();
-      const copyOf = production ? null : currentCopyOf();
-      for (const [mapId, composition] of kitMaps(root)) {
-        if (!content.selection().maps.has(mapId)) continue;
-        // A composition that cannot be read stops the build or the dev page with its reason, not a map that quietly draws without it.
-        const read = readKitArt(root, mapId, composition, { requireScanned: production });
-        arts[mapId] = read.art;
-        for (const img of read.images) {
-          // The build imports the WebP copy; the dev server too, only while it is current (else no file: the hot pink box, as above).
-          let file: string | null = img.file, bytes = img.bytes;
-          if (copyOf) {
-            file = copyOf(img.file);
-            if (file) bytes = statSync(file).size;
-          }
-          if (production) {
-            file = img.file.startsWith(kitDir + path.sep) ? path.join(kitWebpDir, path.relative(kitDir, img.file).replace(/\.(png|jpg)$/, '.webp')) : img.file.replace(/\.(png|jpg)$/, '.webp');
-            const size = imageSize(new Uint8Array(readFileSync(file)));
-            if (!size || size.width !== img.width || size.height !== img.height) this.error(`The WebP copy of ${img.slot} is not the size of its master. Run node tools/art_webp.ts --all.`);
-            bytes = statSync(file).size;
-          }
-          images.set(img.slot, { file, bytes, width: img.width, height: img.height });
-        }
-        this.addWatchFile(path.join(root, composition));
-      }
-      const list = [...images].map(([slot, v]) => ({ slot, ...v }));
-      const imports = list.map((img, i) => img.file ? `import kit${i} from ${JSON.stringify(img.file + '?url')};` : '').filter(Boolean).join('\n');
-      const entries = list.map((img, i) => `${JSON.stringify(img.slot)}: { url: ${img.file ? `kit${i}` : 'null'}, bytes: ${img.bytes}, width: ${img.width}, height: ${img.height} }`).join(',\n');
-      return `${imports}\nexport const kitImages = {${entries}};\nexport default ${JSON.stringify(arts)};`;
-    },
-    configureServer(server) {
-      // A composition, a tileset or a map edited or added: the module is read again at the next refresh.
-      const stale = (file: string) => {
-        const f = path.resolve(file);
-        if (!f.startsWith(path.join(root, 'art/tiled') + path.sep) && !f.startsWith(path.join(root, 'content/maps') + path.sep)) return;
-        const mod = server.moduleGraph.getModuleById('\0' + KIT_ART);
-        if (mod) server.moduleGraph.invalidateModule(mod);
-      };
-      for (const event of ['add', 'unlink', 'change']) server.watcher.on(event, stale);
-    },
-  };
-}
-
 /**
  * `npm run dev` keeps the WebP copies current in the background (the owner, 2026-10-28: the lag between a new PNG and its
  * WebP "happens in the background and I don't see them until later when I reload the page"). The server starting, or a
- * master, composition or map written, runs tools/art_webp.ts once the files have been quiet a few seconds; meanwhile a new or
+ * master written, runs tools/art_webp.ts once the files have been quiet a few seconds; meanwhile a new or
  * changed master shows the hot pink box (devArtFiles above), and a reload after shows the copy. Only `npm run dev` sets THAT80SGAME_WEBP_WATCH: a check's server
  * must never write the tree it is reading, and copies made this way are files to commit like any other.
  */
@@ -260,8 +218,7 @@ function webpInBackground(): Plugin {
       const root = server.config.root, logger = server.config.logger;
       // The public repository has no tools/art_webp.ts, and its copies are already current, so its dev server makes none.
       if (process.env.THAT80SGAME_WEBP_WATCH !== '1' || !existsSync(path.join(root, 'tools/art_webp.ts'))) return;
-      const art = path.join(root, 'src/art/images') + path.sep, kit = path.join(root, 'art/tiled') + path.sep;
-      const copies = path.join(root, 'art/tiled/webp') + path.sep, maps = path.join(root, 'content/maps') + path.sep;
+      const art = path.join(root, 'src/art/images') + path.sep;
       let timer: ReturnType<typeof setTimeout> | undefined, child: ChildProcess | undefined, again = false, closed = false;
       const schedule = () => { clearTimeout(timer); if (!closed) timer = setTimeout(run, 3000); };
       const run = () => {
@@ -283,9 +240,7 @@ function webpInBackground(): Plugin {
       };
       const relevant = (file: string) => {
         const f = path.resolve(file);
-        if (f.startsWith(art)) return /\.(png|jpg)$/.test(f);
-        if (f.startsWith(maps)) return f.endsWith('.tmj');
-        return f.startsWith(kit) && !f.startsWith(copies) && /\.(png|jpg|tmj|tsx|json)$/.test(f);
+        return f.startsWith(art) && /\.(png|jpg)$/.test(f);
       };
       for (const event of ['add', 'change', 'unlink']) server.watcher.on(event, (file: string) => { if (relevant(file)) schedule(); });
       server.httpServer?.once('close', () => { closed = true; clearTimeout(timer); child?.kill('SIGTERM'); });
@@ -323,7 +278,7 @@ function thirdPartyLicenses(): Plugin {
  * What the Settings page prints at its foot (src/build_stamp.ts): the commit the build was made from, whether the checkout had
  * changes not yet committed, and when it was made (the owner, 2026-11-08 and 2026-11-11). The dev server's is from when it started.
  * THAT80SGAME_BUILD_STAMP, the same three fields as JSON, sets it instead: tools/publish/publish.ts gives its two builds one stamp so
- * that they can come out byte for byte the same.
+ * that they can come out byte for byte the same. It goes in index.html, never in a script (stampPage below).
  */
 function buildStamp(): { sha: string; changed: boolean; time: string } {
   const given = process.env.THAT80SGAME_BUILD_STAMP;
@@ -338,8 +293,20 @@ function buildStamp(): { sha: string; changed: boolean; time: string } {
 }
 
 /**
+ * The stamp in index.html, as data the page reads (src/build_stamp.ts), and not in the scripts. Written into a script, it changed
+ * that script, and so its name and the names of the scripts that import it, with every build, code changed or not; a page left
+ * open across a release then found a script it fetched late gone. In the page, a script keeps its name until its own code changes.
+ */
+function stampPage(stamp: { sha: string; changed: boolean; time: string }): Plugin {
+  return {
+    name: 'stamp-page',
+    transformIndexHtml: () => [{ tag: 'script', attrs: { type: 'application/json', id: 'build-stamp' }, children: JSON.stringify(stamp), injectTo: 'head' }],
+  };
+}
+
+/**
  * version.json at the top of the built site, and from the dev server: the build's commit and time, the stamp the page itself
- * carries (`__BUILD__`). A page left open across a release reads it when a file it fetches late is missing, to learn whether
+ * carries in index.html. A page left open across a release reads it when a file it fetches late is missing, to learn whether
  * a newer release took that file away (src/release_check.ts; the owner, 15 Nov: "Noticing a newer release would be better").
  */
 function versionFile(stamp: { sha: string; time: string }): Plugin {
@@ -363,8 +330,7 @@ const stamp = buildStamp();
 
 export default defineConfig({
   base: './',
-  define: { __BUILD__: JSON.stringify(stamp) },
-  plugins: [content.plugin, restartOnConfigChange(), globsFollowNewFiles(), artFiles(), kitArt(), webpInBackground(), thirdPartyLicenses(), versionFile(stamp)],
+  plugins: [content.plugin, contentCheckStaysOut(), restartOnConfigChange(), globsFollowNewFiles(), artFiles(), webpInBackground(), thirdPartyLicenses(), stampPage(stamp), versionFile(stamp)],
   // The check tools give each server they start a dependency cache of its own (tools/harness.ts startServer), so
   // servers running side by side never rebuild a cache another one's pages are using; `npm run dev` keeps the default.
   cacheDir: process.env.THAT80SGAME_VITE_CACHE || undefined,

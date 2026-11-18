@@ -1055,8 +1055,12 @@ const templeStudents = (s: Stage): void => {
 
 /** A sweat drop by a worried head. */
 function sweat(g: Graphics, x: number, y: number, s: number): void {
-  g.moveTo(x, y - 14 * s).bezierCurveTo(x + 3 * s, y - 6 * s, x + 7 * s, y - 1 * s, x + 7 * s, y + 4 * s).arc(x, y + 4 * s, 7 * s, 0, Math.PI)
-    .bezierCurveTo(x - 7 * s, y - 1 * s, x - 3 * s, y - 6 * s, x, y - 14 * s).fill(0x9fd8ff).stroke({ width: 2.4 * s, color: INK, join: 'round' });
+  // From its round foot up to the tip, then the right side down from the tip as a line of its own: a curve ending on the arc's
+  // first point gave that point twice, which builds vertices that are not numbers (the line some Android GPUs draw across the
+  // screen). The same points, and the line still ends at the tip.
+  g.beginPath().arc(x, y + 4 * s, 7 * s, 0, Math.PI).bezierCurveTo(x - 7 * s, y - 1 * s, x - 3 * s, y - 6 * s, x, y - 14 * s)
+    .moveTo(x, y - 14 * s).bezierCurveTo(x + 3 * s, y - 6 * s, x + 7 * s, y - 1 * s, x + 7 * s, y + 4 * s)
+    .fill(0x9fd8ff).stroke({ width: 2.4 * s, color: INK, join: 'round' });
   g.ellipse(x - 2.5 * s, y + 2 * s, 2 * s, 3 * s).fill(0xffffff);
 }
 
@@ -1868,7 +1872,8 @@ const separateWays = (s: Stage): void => {
     mast(h, s.glow, mx, my, MH, 4);
     for (const [k, a] of [[1, 0.8], [1.6, 0.6], [2.2, 0.4]] as const) {
       const a0 = -Math.PI * 0.85, rr = 22 * k;
-      h.moveTo(mx + Math.cos(a0) * rr, my - MH - 6 + Math.sin(a0) * rr).arc(mx, my - MH - 6, rr, a0, -Math.PI * 0.15).stroke({ width: 3.4, color: 0xffffff, alpha: a });
+      // Each arc a path of its own: a moveTo to its first point gave that point twice, as the replay arrow's did (f5621aa).
+      h.beginPath().arc(mx, my - MH - 6, rr, a0, -Math.PI * 0.15).stroke({ width: 3.4, color: 0xffffff, alpha: a });
     }
   });
 
